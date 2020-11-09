@@ -8,6 +8,8 @@ case class ExprUnary(op: PrefixType.PrefixType, expr: Expr) extends Expr
 
 case class ExprValue(value: Value) extends Expr
 
+case class ExprIdentifier(name: String) extends Expr
+
 case class ExprApp(func: Expr, arg: Expr) extends Expr
 
 object Expr {
@@ -16,6 +18,7 @@ object Expr {
     case ExprBinary(left, op, right) => s"($op ${showExpr(left)} ${showExpr(right)})"
     case ExprUnary(op, expr) => s"($op ${showExpr(expr)}"
     case ExprValue(value) => s"<${Value.showValue(value)}>"
+    case ExprIdentifier(name) => s"@$name"
     case ExprApp(func, arg) => s"(${showExpr(func)} ${showExpr(arg)})"
   }
 }

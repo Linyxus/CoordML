@@ -150,11 +150,11 @@ class Parser(val tokens: List[Token]) {
       case TokenType.UNIT => ExprValue(ValUnit)
       case TokenType.BOOLEAN => ExprValue(ValBoolean(token.lexeme.asInstanceOf[Boolean]))
       case TokenType.IDENTIFIER =>
-        ExprValue(if (matchAhead(TokenType.EQ_GT)) {
-          ValLambda(token.content, parseExpr)
+        if (matchAhead(TokenType.EQ_GT)) {
+          ExprValue(ValLambda(token.content, parseExpr))
         } else {
-          ValIdentifier(token.content)
-        })
+          ExprIdentifier(token.content)
+        }
 
       case _ =>
         throw ParseError(s"Unexpected token: $token")

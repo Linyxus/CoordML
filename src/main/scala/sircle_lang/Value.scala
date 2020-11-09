@@ -1,20 +1,32 @@
 package sircle_lang
 
-sealed trait Value
+sealed trait Value {
+  val valueType: ValueType
+}
 
-case class ValInt(value: Int) extends Value
+case class ValInt(value: Int) extends Value {
+  override val valueType: ValueType = IntType
+}
 
-case class ValDouble(value: Double) extends Value
+case class ValDouble(value: Double) extends Value {
+  override val valueType: ValueType = DoubleType
+}
 
-case class ValString(value: String) extends Value
+case class ValString(value: String) extends Value {
+  override val valueType: ValueType = StringType
+}
 
-case object ValUnit extends Value
+case object ValUnit extends Value {
+  override val valueType: ValueType = UnitType
+}
 
-case class ValBoolean(value: Boolean) extends Value
+case class ValBoolean(value: Boolean) extends Value {
+  override val valueType: ValueType = BooleanType
+}
 
-case class ValLambda(name: String, expr: Expr) extends Value
-
-case class ValIdentifier(name: String) extends Value
+case class ValLambda(name: String, expr: Expr) extends Value {
+  override val valueType: ValueType = ???
+}
 
 object Value {
   def showValue(value: Value): String = value match {
@@ -24,6 +36,5 @@ object Value {
     case ValUnit => "()"
     case ValBoolean(v) => if (v) "True" else "False"
     case ValLambda(name, expr) => s"lambda: $name => ${Expr.showExpr(expr)}"
-    case ValIdentifier(name) => name
   }
 }
