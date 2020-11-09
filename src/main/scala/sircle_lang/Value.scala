@@ -28,6 +28,10 @@ case class ValLambda(name: String, expr: Expr) extends Value {
   override val valueType: ValueType = ???
 }
 
+case class ValBuiltin(argSig: List[ValueType], func: List[Value] => Value, resolved: List[Value] = Nil) extends Value {
+  override val valueType: ValueType = LambdaType(argSig(resolved.length))
+}
+
 object Value {
   def showValue(value: Value): String = value match {
     case ValInt(v) => v.toString

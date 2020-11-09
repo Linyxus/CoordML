@@ -16,6 +16,8 @@ object Repl extends App {
     try {
       val expr = parser.parseExpr
       println(Expr.showExpr(expr))
+      val evaluator = new Evaluator
+      println(evaluator.evalExpr(expr))
     } catch {
       case e: ParseError => println(e.errorMsg)
     }

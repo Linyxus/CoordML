@@ -118,6 +118,7 @@ class Parser(val tokens: List[Token]) {
       TokenType.INT,
       TokenType.DOUBLE,
       TokenType.UNIT,
+      TokenType.BOOLEAN,
       TokenType.IDENTIFIER
     )
 
