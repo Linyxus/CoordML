@@ -148,6 +148,7 @@ class Parser(val tokens: List[Token]) {
       case TokenType.DOUBLE => ExprValue(ValDouble(token.lexeme.asInstanceOf[Double]))
       case TokenType.STRING => ExprValue(ValString(token.lexeme.asInstanceOf[String]))
       case TokenType.UNIT => ExprValue(ValUnit)
+      case TokenType.BOOLEAN => ExprValue(ValBoolean(token.lexeme.asInstanceOf[Boolean]))
       case TokenType.IDENTIFIER =>
         ExprValue(if (matchAhead(TokenType.EQ_GT)) {
           ValLambda(token.content, parseExpr)
