@@ -1,12 +1,34 @@
 package sircle_lang
 
+import scala.collection.immutable.List
+
 class Evaluator {
-  val prelude: Map[String, Value] = Map(
+  val valuePrelude: List[(String, Value)] = List(
     "add" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value + y.asInstanceOf[ValInt].value)
+      }
+    ),
+    "add" -> ValBuiltin(
+      List(StringType, StringType),
+      args => {
+        val x :: y :: Nil = args
+        ValString(x.asInstanceOf[ValString].value + y.asInstanceOf[ValString].value)
+      }
+    ),
+    "add" -> ValBuiltin(
+      List(ListType(AnyType), ListType(AnyType)),
+      args => {
+        val x :: y :: Nil = args
+        val lx = x.asInstanceOf[ValList]
+        val ly = y.asInstanceOf[ValList]
+        if (lx.itemType === ly.itemType) {
+          ValList(lx.itemType, lx.items ++ ly.items)
+        } else {
+          throw RuntimeError(s"Can not concat two lists of different types: ${lx.itemType} and ${ly.itemType}.")
+        }
       }
     ),
     "subtract" -> ValBuiltin(
@@ -71,6 +93,20 @@ class Evaluator {
         }
       }
     ),
+    "elemOf" -> ValBuiltin(
+      List(AnyType, ListType(AnyType)),
+      args => {
+        val x :: xs :: Nil = args
+        val t = x.valueType
+        val l = xs.asInstanceOf[ValList]
+        val xsT = l.itemType
+        if (t === xsT) {
+          ValBoolean(l.items contains x)
+        } else {
+          throw RuntimeError(s"Type mismatch in elemOf, $t and $xsT")
+        }
+      }
+    ),
     "isEmpty" -> ValBuiltin(
       List(ListType(AnyType)),
       args => {
@@ -102,21 +138,50 @@ class Evaluator {
     ),
   )
 
-  def resolveIdentifier(name: String): Value =
-    prelude get name match {
-      case None => throw RuntimeError(s"Can not find identifier $name.")
-      case Some(v) => v
+  val typePrelude: Map[String, ValueType] = Map(
+    "Any" -> AnyType,
+    "Int" -> IntType,
+    "Double" -> DoubleType,
+    "String" -> StringType,
+    "Unit" -> UnitType,
+    "Boolean" -> BooleanType,
+  )
+
+  def locateList[A, B](key: A, l: List[(A, B)], pred: B => Boolean = (x: Any) => true): B =
+    l find { x =>
+      x._1 == key && pred(x._2)
+    } match {
+      case Some(value) => value._2
+      case None => throw RuntimeError(s"Can not locate name $key.")
     }
 
-  def evalExpr(expr: Expr): Value =
+  def locateValue(name: String, local: List[(String, Value)], pred: Value => Boolean = _ => true): Value =
+    locateList(name, local :++ valuePrelude, pred)
+
+  def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType =
+    locateList(name, local :++ typePrelude)
+
+  def evalTypeExpr(typeExpr: TypeExpr): ValueType = typeExpr match {
+    case TypeExprIdentifier(name) => locateType(name)
+    case TypeExprList(itemType) => ListType(evalTypeExpr(itemType))
+    case TypeExprArrow(left, _) => LambdaType(evalTypeExpr(left))
+  }
+
+  def evalExpr(expr: Expr, localVal: List[(String, Value)] = Nil): Value =
     expr match {
       case ExprValue(value) => value
-      case ExprIdentifier(name) => resolveIdentifier(name)
-      case ExprApp(func, arg) => {
-        val f = evalExpr(func)
-        val x = evalExpr(arg)
+      case ExprIdentifier(name) => locateValue(name, localVal)
+      case ExprLambda(argName, argType, body) =>
+        val t = evalTypeExpr(argType)
+        ValLambda(argName, t, body, localVal)
+      case ExprApp(func, arg) =>
+        val x = evalExpr(arg, localVal)
         val xT = x.valueType
         val expectT = LambdaType(xT)
+        val f = func match {
+          case ExprIdentifier(name) => locateValue(name, localVal, expectT === _.valueType)
+          case _ => evalExpr(func, localVal)
+        }
         if (expectT === f.valueType) {
           f match {
             case ValBuiltin(argSig, func, resolved) =>
@@ -126,12 +191,14 @@ class Evaluator {
               } else {
                 ValBuiltin(argSig, func, resolvedP)
               }
-            case ValLambda(_, _, _) => throw RuntimeError("Unimplemented for applying lambda.")
+            case ValLambda(argName, _, body, lexical) =>
+              val innerLocal = (argName -> x) :: (lexical :++ localVal)
+              evalExpr(body, innerLocal)
             case _ => throw RuntimeError("Error in type checker.")
           }
         } else
           throw RuntimeError("Type mismatch.")
-      }
+
       case _ => throw RuntimeError("Unimplemented")
     }
 }

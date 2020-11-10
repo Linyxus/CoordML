@@ -18,17 +18,17 @@ object Repl extends App {
       var expr = parser.parseExpr
       print("parsed: ")
       println(Expr show expr)
-//      expr = ListDesugar transform expr
-//      print("list desugar: ")
-//      println(Expr showExpr expr)
-//      print("binary op desugar: ")
-//      expr = BinOpDesugar transform expr
-//      println(Expr showExpr expr)
-//      print("unary op desugar: ")
-//      expr = UnaryOpDesugar transform expr
-//      println(Expr showExpr expr)
-//      val evaluator = new Evaluator
-//      println(Value showValue evaluator.evalExpr(expr))
+      expr = ListDesugar transform expr
+      print("list desugar: ")
+      println(Expr show expr)
+      print("binary op desugar: ")
+      expr = BinOpDesugar transform expr
+      println(Expr show expr)
+      print("unary op desugar: ")
+      expr = UnaryOpDesugar transform expr
+      println(Expr show expr)
+      val evaluator = new Evaluator
+      println(Value showValue evaluator.evalExpr(expr))
     } catch {
       case e: ParseError => println("Parse error: " + e.errorMsg)
       case e: RuntimeError => println("Runtime error: " + e.errorMsg)

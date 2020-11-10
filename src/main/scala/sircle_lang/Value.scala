@@ -24,7 +24,7 @@ case class ValBoolean(value: Boolean) extends Value {
   override val valueType: ValueType = BooleanType
 }
 
-case class ValLambda(argName: String, argType: ValueType, expr: Expr) extends Value {
+case class ValLambda(argName: String, argType: ValueType, expr: Expr, local: List[(String, Value)]) extends Value {
   override val valueType: ValueType = LambdaType(argType)
 }
 
@@ -43,7 +43,7 @@ object Value {
     case ValString(v) => "\"" + v + "\""
     case ValUnit => "()"
     case ValBoolean(v) => if (v) "True" else "False"
-    case ValLambda(name, expr) => s"lambda: $name => ${Expr.show(expr)}"
+    case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
     case ValList(itemType, items) => s"[${items map showValue mkString ", "}]:$itemType"
   }
 }

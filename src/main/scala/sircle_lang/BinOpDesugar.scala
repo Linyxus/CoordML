@@ -10,6 +10,7 @@ object BinOpDesugar extends TreeWalkDesugar {
     MINUS -> "subtract",
     MUL -> "mult",
     DIV -> "div",
+    IN -> "elemOf",
   )
 
   override def desugar(expr: Expr): Expr = expr match {
