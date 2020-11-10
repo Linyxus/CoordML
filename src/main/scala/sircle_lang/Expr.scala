@@ -18,7 +18,7 @@ object Expr {
   def showExpr(expr: Expr): String = expr match {
     case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${showExpr(left)} ${showExpr(right)})"
     case ExprBinary(left, op, right) => s"($op ${showExpr(left)} ${showExpr(right)})"
-    case ExprUnary(op, expr) => s"($op ${showExpr(expr)}"
+    case ExprUnary(op, expr) => s"($op ${showExpr(expr)})"
     case ExprValue(value) => s"<${Value.showValue(value)}>"
     case ExprIdentifier(name) => s"@$name"
     case ExprApp(func, arg) => s"(${showExpr(func)} ${showExpr(arg)})"
