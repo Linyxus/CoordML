@@ -21,8 +21,8 @@ object Repl extends App {
       val evaluator = new Evaluator
       println(Value showValue evaluator.evalExpr(expr))
     } catch {
-      case e: ParseError => println(e.errorMsg)
-      case e: RuntimeError => println(e.errorMsg)
+      case e: ParseError => println("Parse error: " + e.errorMsg)
+      case e: RuntimeError => println("Runtime error: " + e.errorMsg)
     }
   }
 }

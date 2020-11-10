@@ -64,6 +64,35 @@ class Evaluator {
         }
       }
     ),
+    "isEmpty" -> ValBuiltin(
+      List(ListType(AnyType)),
+      args => {
+        val x :: Nil = args
+        ValBoolean(x.asInstanceOf[ValList].items.isEmpty)
+      }
+    ),
+    "head" -> ValBuiltin(
+      List(ListType(AnyType)),
+      args => {
+        val x :: Nil = args
+        val l = x.asInstanceOf[ValList].items
+        if (l.isEmpty) {
+          throw RuntimeError("Can not obtain the head of an empty list.")
+        } else
+          l.head
+      }
+    ),
+    "tail" -> ValBuiltin(
+      List(ListType(AnyType)),
+      args => {
+        val x :: Nil = args
+        val l = x.asInstanceOf[ValList].items
+        if (l.isEmpty) {
+          throw RuntimeError("Can not obtain the tail of an empty list.")
+        } else
+          ValList(x.asInstanceOf[ValList].itemType, l.tail)
+      }
+    ),
   )
 
   def resolveIdentifier(name: String): Value =
