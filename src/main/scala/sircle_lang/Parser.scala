@@ -119,7 +119,8 @@ class Parser(val tokens: List[Token]) {
       TokenType.DOUBLE,
       TokenType.UNIT,
       TokenType.BOOLEAN,
-      TokenType.IDENTIFIER
+      TokenType.IDENTIFIER,
+      TokenType.LEFT_BRACKET,
     )
 
     var expr = parseTerm
@@ -145,6 +146,11 @@ class Parser(val tokens: List[Token]) {
         } else {
           throw ParseError("Unmatched parens")
         }
+      case TokenType.LEFT_BRACKET =>
+        parseList match {
+          case Nil => ExprValue(ValList(AnyType, Nil))
+          case x => ExprList(x)
+        }
       case TokenType.INT => ExprValue(ValInt(token.lexeme.asInstanceOf[Int]))
       case TokenType.DOUBLE => ExprValue(ValDouble(token.lexeme.asInstanceOf[Double]))
       case TokenType.STRING => ExprValue(ValString(token.lexeme.asInstanceOf[String]))
@@ -161,4 +167,18 @@ class Parser(val tokens: List[Token]) {
         throw ParseError(s"Unexpected token: $token")
     }
   }
+
+  def parseList: List[Expr] =
+    if (matchAhead(TokenType.RIGHT_BRACKET)) {
+      Nil
+    } else {
+      val expr = parseExpr
+      if (matchAhead(TokenType.COMMA)) {
+        expr :: parseList
+      } else if (matchAhead(TokenType.RIGHT_BRACKET))
+        expr :: Nil
+      else {
+        throw ParseError(s"List elements should be separated by comma.")
+      }
+    }
 }

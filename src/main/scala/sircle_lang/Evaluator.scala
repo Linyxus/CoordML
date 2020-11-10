@@ -51,6 +51,19 @@ class Evaluator {
         ValBoolean(!x.asInstanceOf[ValBoolean].value)
       }
     ),
+    "cons" -> ValBuiltin(
+      List(AnyType, ListType(AnyType)),
+      args => {
+        val x :: xs :: Nil = args
+        val t = x.valueType
+        val xsT = xs.valueType.asInstanceOf[ListType]
+        if (t === xsT.itemType) {
+          ValList(t, x :: xs.asInstanceOf[ValList].items)
+        } else {
+          throw RuntimeError(s"Type mismatch in cons, $t and $xsT")
+        }
+      }
+    ),
   )
 
   def resolveIdentifier(name: String): Value =
@@ -68,7 +81,7 @@ class Evaluator {
         val x = evalExpr(arg)
         val xT = x.valueType
         val expectT = LambdaType(xT)
-        if (expectT.checkType(f.valueType)) {
+        if (expectT === f.valueType) {
           f match {
             case ValBuiltin(argSig, func, resolved) =>
               val resolvedP = resolved :+ x

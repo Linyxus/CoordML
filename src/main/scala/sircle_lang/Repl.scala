@@ -14,12 +14,15 @@ object Repl extends App {
     println()
     val parser = new Parser(tokens)
     try {
-      val expr = parser.parseExpr
-      println(Expr.showExpr(expr))
+      var expr = parser.parseExpr
+      println(Expr showExpr expr)
+      expr = ListDesugar transform expr
+      println(Expr showExpr expr)
       val evaluator = new Evaluator
-      println(evaluator.evalExpr(expr))
+      println(Value showValue evaluator.evalExpr(expr))
     } catch {
       case e: ParseError => println(e.errorMsg)
+      case e: RuntimeError => println(e.errorMsg)
     }
   }
 }

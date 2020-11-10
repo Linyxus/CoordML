@@ -32,6 +32,10 @@ case class ValBuiltin(argSig: List[ValueType], func: List[Value] => Value, resol
   override val valueType: ValueType = LambdaType(argSig(resolved.length))
 }
 
+case class ValList(itemType: ValueType, items: List[Value]) extends Value {
+  override val valueType: ValueType = ListType(itemType)
+}
+
 object Value {
   def showValue(value: Value): String = value match {
     case ValInt(v) => v.toString
@@ -40,5 +44,6 @@ object Value {
     case ValUnit => "()"
     case ValBoolean(v) => if (v) "True" else "False"
     case ValLambda(name, expr) => s"lambda: $name => ${Expr.showExpr(expr)}"
+    case ValList(itemType, items) => s"[${items map showValue mkString ", "}]:$itemType"
   }
 }
