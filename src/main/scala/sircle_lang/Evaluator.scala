@@ -51,6 +51,13 @@ class Evaluator {
         ValBoolean(!x.asInstanceOf[ValBoolean].value)
       }
     ),
+    "negF" -> ValBuiltin(
+      List(IntType),
+      args => {
+        val x :: Nil = args
+        ValInt(-x.asInstanceOf[ValInt].value)
+      }
+    ),
     "cons" -> ValBuiltin(
       List(AnyType, ListType(AnyType)),
       args => {
