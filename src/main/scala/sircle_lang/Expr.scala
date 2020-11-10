@@ -21,7 +21,7 @@ object Expr {
     case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${show(left)} ${show(right)})"
     case ExprBinary(left, op, right) => s"($op ${show(left)} ${show(right)})"
     case ExprUnary(op, expr) => s"($op ${show(expr)})"
-    case ExprValue(value) => s"<${Value.showValue(value)}>"
+    case ExprValue(value) => s"<${Value.show(value)}>"
     case ExprIdentifier(name) => s"@$name"
     case ExprLambda(argName, argType, body) => s"<Lambda $argName: ${TypeExpr show argType} => ${Expr show body}>"
     case ExprApp(func, arg) => s"(${show(func)} ${show(arg)})"

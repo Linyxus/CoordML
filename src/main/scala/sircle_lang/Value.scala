@@ -37,13 +37,13 @@ case class ValList(itemType: ValueType, items: List[Value]) extends Value {
 }
 
 object Value {
-  def showValue(value: Value): String = value match {
+  def show(value: Value): String = value match {
     case ValInt(v) => v.toString
     case ValDouble(v) => v.toString
     case ValString(v) => "\"" + v + "\""
     case ValUnit => "()"
     case ValBoolean(v) => if (v) "True" else "False"
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
-    case ValList(itemType, items) => s"[${items map showValue mkString ", "}]:$itemType"
+    case ValList(itemType, items) => s"[${items map show mkString ", "}]:$itemType"
   }
 }

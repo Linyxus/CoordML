@@ -2,7 +2,7 @@ package sircle_lang
 
 import OpType.{Associativity, LeftAssoc, OpType, RightAssoc}
 import PrefixType.PrefixType
-import TokenType.TokenType
+import TokenType.{EQ, IDENTIFIER, TokenType}
 
 class Parser(val tokens: List[Token]) {
   val opRules: Array[(Associativity, Map[TokenType, OpType])] = Array(
@@ -60,6 +60,14 @@ class Parser(val tokens: List[Token]) {
     } else {
       false
     }
+
+  def expect[A](tokenType: TokenType, func: Token => A): A = {
+    val token = peek
+    if (matchAhead(tokenType))
+      func(token)
+    else
+      throw ParseError(s"Expected $tokenType but see ${peek.tokenType}")
+  }
 
   def lookAhead(tokenTypes: List[TokenType]): Boolean =
     tokenTypes contains peek.tokenType
@@ -219,4 +227,23 @@ class Parser(val tokens: List[Token]) {
         throw ParseError(s"Invalid type expr at token $peek")
     }
   }
+
+  def parseBinding: Binding =
+    if (matchAhead(TokenType.KW_DEF))
+      parseValBinding
+    else
+      ExprBinding(parseExpr)
+
+  def parseValBinding: Binding =
+    expect(TokenType.IDENTIFIER, { token =>
+      val name = token.content
+      val valType = if (peek.tokenType == TokenType.COLON) {
+        advance
+        parseTypeExpr
+      } else TypeExprIdentifier("Any")
+      expect(TokenType.EQ, { _ =>
+        val expr = parseExpr
+        ValBinding(name, valType, expr)
+      })
+    })
 }

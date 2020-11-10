@@ -147,6 +147,8 @@ class Evaluator {
     "Boolean" -> BooleanType,
   )
 
+  var valueBindings: List[(String, Value)] = Nil
+
   def locateList[A, B](key: A, l: List[(A, B)], pred: B => Boolean = (x: Any) => true): B =
     l find { x =>
       x._1 == key && pred(x._2)
@@ -156,7 +158,7 @@ class Evaluator {
     }
 
   def locateValue(name: String, local: List[(String, Value)], pred: Value => Boolean = _ => true): Value =
-    locateList(name, local :++ valuePrelude, pred)
+    locateList(name, local :++ valueBindings :++ valuePrelude, pred)
 
   def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType =
     locateList(name, local :++ typePrelude)
@@ -165,6 +167,44 @@ class Evaluator {
     case TypeExprIdentifier(name) => locateType(name)
     case TypeExprList(itemType) => ListType(evalTypeExpr(itemType))
     case TypeExprArrow(left, _) => LambdaType(evalTypeExpr(left))
+  }
+
+  def desugarExpr(expr: Expr): Expr = {
+    var x = expr
+    //    print("parsed: ")
+    //    println(Expr show x)
+    x = ListDesugar transform x
+    //    print("list desugar: ")
+    //    println(Expr show x)
+    x = BinOpDesugar transform x
+    //    print("binary op desugar: ")
+    //    println(Expr show x)
+    //    print("unary op desugar: ")
+    x = UnaryOpDesugar transform x
+    //    println(Expr show x)
+    x
+  }
+
+  def executeBinding(binding: Binding): Value = binding match {
+    case ValBinding(name, valType, expr) =>
+      val t = evalTypeExpr(valType)
+      val e = evalExpr(desugarExpr(expr))
+
+      (valuePrelude :++ valueBindings) find { x =>
+        x._1 == name && x._2.valueType === t
+      } match {
+        case Some(_) => throw RuntimeError(s"Duplicated symbol name $name.")
+        case None =>
+      }
+
+      if (t === e.valueType) {
+        valueBindings = (name -> e) :: valueBindings
+        e
+      } else
+        throw RuntimeError(s"Type mismatch in binding: $t and ${e.valueType}")
+    case ExprBinding(expr) =>
+      val x = desugarExpr(expr)
+      evalExpr(x)
   }
 
   def evalExpr(expr: Expr, localVal: List[(String, Value)] = Nil): Value =
