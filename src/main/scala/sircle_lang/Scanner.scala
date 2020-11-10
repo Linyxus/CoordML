@@ -118,6 +118,7 @@ class Scanner(val source: String) {
 
     ch match {
       case '+' => makeToken(PLUS)
+      case '-' if matchAhead('>') => makeToken(RIGHT_ARROW)
       case '-' => makeToken(MINUS)
       case '*' => makeToken(ASTERISK)
       case '/' => makeToken(SLASH)
@@ -139,8 +140,8 @@ class Scanner(val source: String) {
       case ']' => makeToken(RIGHT_BRACKET)
       case ')' => makeToken(RIGHT_PAREN)
       case '}' => makeToken(RIGHT_BRACE)
-      case ';' => makeToken(COLON)
-      case ':' => makeToken(SEMI_COLON)
+      case ';' => makeToken(SEMI_COLON)
+      case ':' => makeToken(COLON)
       case ',' => makeToken(COMMA)
       case '.' => makeToken(DOT)
       case x if x.isDigit => scanNumber
