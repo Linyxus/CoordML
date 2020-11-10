@@ -126,7 +126,7 @@ class Evaluator {
               } else {
                 ValBuiltin(argSig, func, resolvedP)
               }
-            case ValLambda(_, _) => throw RuntimeError("Unimplemented for applying lambda.")
+            case ValLambda(_, _, _) => throw RuntimeError("Unimplemented for applying lambda.")
             case _ => throw RuntimeError("Error in type checker.")
           }
         } else

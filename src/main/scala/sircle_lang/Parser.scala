@@ -158,11 +158,19 @@ class Parser(val tokens: List[Token]) {
       case TokenType.BOOLEAN => ExprValue(ValBoolean(token.lexeme.asInstanceOf[Boolean]))
       case TokenType.IDENTIFIER =>
         if (matchAhead(TokenType.EQ_GT)) {
-          ExprValue(ValLambda(token.content, parseExpr))
-        } else {
+          ExprLambda(token.content, TypeExprIdentifier("Any"), parseExpr)
+        }
+        else if (matchAhead(TokenType.COLON)) {
+          val typeExpr = parseTypeExpr
+          if (matchAhead(TokenType.EQ_GT)) {
+            ExprLambda(token.content, typeExpr, parseExpr)
+          } else {
+            throw ParseError(s"Unexpected token $peek when parsing a lambda expression.")
+          }
+        }
+        else {
           ExprIdentifier(token.content)
         }
-
       case _ =>
         throw ParseError(s"Unexpected token: $token")
     }
@@ -181,4 +189,34 @@ class Parser(val tokens: List[Token]) {
         throw ParseError(s"List elements should be separated by comma.")
       }
     }
+
+  def parseTypeExpr: TypeExpr = {
+    val expr = parseTypeTerm
+    if (matchAhead(TokenType.RIGHT_ARROW))
+      TypeExprArrow(expr, parseTypeExpr)
+    else
+      expr
+  }
+
+  def parseTypeTerm: TypeExpr = {
+    val token = advance
+    token.tokenType match {
+      case TokenType.IDENTIFIER =>
+        TypeExprIdentifier(token.content)
+      case TokenType.LEFT_PAREN =>
+        val expr = parseTypeExpr
+        if (matchAhead(TokenType.RIGHT_PAREN))
+          expr
+        else
+          throw ParseError(s"Unmatched paren when parsing type expressions.")
+      case TokenType.LEFT_BRACKET =>
+        val expr = parseTypeExpr
+        if (matchAhead(TokenType.RIGHT_BRACKET))
+          TypeExprList(expr)
+        else
+          throw ParseError(s"Unmatched list bracket when parsing type expressions.")
+      case _ =>
+        throw ParseError(s"Invalid type expr at token $peek")
+    }
+  }
 }

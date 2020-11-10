@@ -10,18 +10,21 @@ case class ExprValue(value: Value) extends Expr
 
 case class ExprIdentifier(name: String) extends Expr
 
+case class ExprLambda(argName: String, argType: TypeExpr, body: Expr) extends Expr
+
 case class ExprApp(func: Expr, arg: Expr) extends Expr
 
 case class ExprList(items: List[Expr]) extends Expr
 
 object Expr {
-  def showExpr(expr: Expr): String = expr match {
-    case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${showExpr(left)} ${showExpr(right)})"
-    case ExprBinary(left, op, right) => s"($op ${showExpr(left)} ${showExpr(right)})"
-    case ExprUnary(op, expr) => s"($op ${showExpr(expr)})"
+  def show(expr: Expr): String = expr match {
+    case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${show(left)} ${show(right)})"
+    case ExprBinary(left, op, right) => s"($op ${show(left)} ${show(right)})"
+    case ExprUnary(op, expr) => s"($op ${show(expr)})"
     case ExprValue(value) => s"<${Value.showValue(value)}>"
     case ExprIdentifier(name) => s"@$name"
-    case ExprApp(func, arg) => s"(${showExpr(func)} ${showExpr(arg)})"
-    case ExprList(items) => s"<List [${items map showExpr mkString ","}]>"
+    case ExprLambda(argName, argType, body) => s"<Lambda $argName: ${TypeExpr show argType} => ${Expr show body}>"
+    case ExprApp(func, arg) => s"(${show(func)} ${show(arg)})"
+    case ExprList(items) => s"<List [${items map show mkString ","}]>"
   }
 }
