@@ -136,6 +136,14 @@ class Evaluator {
           ValList(x.asInstanceOf[ValList].itemType, l.tail)
       }
     ),
+    "show" -> ValBuiltin(
+      List(IntType),
+      args => {
+        val x :: Nil = args
+        val l = x.asInstanceOf[ValInt].value
+        ValString(l.toString)
+      }
+    ),
   )
 
   val typePrelude: Map[String, ValueType] = Map(
