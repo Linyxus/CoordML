@@ -18,6 +18,8 @@ object Repl extends App {
       println(Expr showExpr expr)
       expr = ListDesugar transform expr
       println(Expr showExpr expr)
+      expr = BinOpDesugar transform expr
+      println(Expr showExpr expr)
       val evaluator = new Evaluator
       println(Value showValue evaluator.evalExpr(expr))
     } catch {
