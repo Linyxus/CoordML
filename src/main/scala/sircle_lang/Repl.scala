@@ -8,12 +8,7 @@ object Repl extends App {
   while (true) {
     val line = readLine("> ")
     val tokens = Scanner.getAllTokens(line)
-//    print("tokens: ")
-//    for (token <- tokens) {
-//      print(Token.show(token))
-//      print(' ')
-//    }
-//    println()
+    println(s"tokens: ${tokens.map(_.toString) mkString " "}")
     val parser = new Parser(tokens)
     try {
       val binding = parser.parseBinding

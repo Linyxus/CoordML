@@ -4,11 +4,14 @@ sealed trait Binding
 
 case class ValBinding(name: String, valType: TypeExpr, expr: Expr) extends Binding
 
+case class ReBinding(name: String, expr: Expr) extends Binding
+
 case class ExprBinding(expr: Expr) extends Binding
 
 object Binding {
   def show(binding: Binding): String = binding match {
     case ValBinding(name, valType, expr) => s"bind $name: ${TypeExpr show valType} := ${Expr show expr}"
     case ExprBinding(expr) => s"eval expr ${Expr show expr}"
+    case ReBinding(name, expr) => s"rebind $name := ${Expr show expr}"
   }
 }

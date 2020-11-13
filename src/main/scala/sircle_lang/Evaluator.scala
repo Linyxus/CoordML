@@ -193,15 +193,15 @@ class Evaluator {
     x
   }
 
-  def executeBinding(binding: Binding): Value = binding match {
+  def executeBinding(binding: Binding, localVal: List[(String, Value)] = Nil): Value = binding match {
     case ValBinding(name, valType, expr) =>
       val t = evalTypeExpr(valType)
-      val e = evalExpr(desugarExpr(expr))
+      val e = evalExpr(desugarExpr(expr), localVal)
 
-      (valuePrelude :++ valueBindings) find { x =>
+      (valuePrelude :++ Nil) find { x =>
         x._1 == name && x._2.valueType === t
       } match {
-        case Some(_) => throw RuntimeError(s"Duplicated symbol name $name.")
+        case Some(_) => throw RuntimeError(s"Can not override built-in symbol name $name.")
         case None =>
       }
 
@@ -213,6 +213,21 @@ class Evaluator {
     case ExprBinding(expr) =>
       val x = desugarExpr(expr)
       evalExpr(x)
+
+    case ReBinding(name, expr) =>
+      val e = evalExpr(desugarExpr(expr), localVal)
+      valueBindings find {
+        _._1 == name
+      } match {
+        case Some(value) =>
+          if (value._2.valueType == e.valueType) {
+            valueBindings = (name -> e) :: valueBindings
+            e
+          } else throw RuntimeError(s"Type mismatch between binding name $name and value ${Value show value._2}.")
+        case None => throw RuntimeError(s"Can not find binding name $name.")
+      }
+
+    case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
   }
 
   def evalExpr(expr: Expr, localVal: List[(String, Value)] = Nil): Value =
@@ -220,6 +235,14 @@ class Evaluator {
       case ExprValue(value) => value
       case ExprIdentifier(name) => locateValue(name, localVal)
       case ExprTuple(items) => ValTuple(items map (x => evalExpr(x, localVal)))
+      case ExprBlock(bindings) => bindings match {
+        case Nil => ValUnit
+        case _ =>
+          val origBindings = valueBindings
+          val ret = (bindings map (x => executeBinding(x))).last
+          valueBindings = origBindings
+          ret
+      }
       case ExprLambda(argName, argType, body) =>
         val t = evalTypeExpr(argType)
         ValLambda(argName, t, body, localVal)

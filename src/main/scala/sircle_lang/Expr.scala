@@ -18,7 +18,7 @@ case class ExprList(items: List[Expr]) extends Expr
 
 case class ExprTuple(items: List[Expr]) extends Expr
 
-case class ExprBlock(lines: List[Expr]) extends Expr
+case class ExprBlock(bindings: List[Binding]) extends Expr
 
 object Expr {
   def show(expr: Expr): String = expr match {
@@ -31,5 +31,6 @@ object Expr {
     case ExprApp(func, arg) => s"(${show(func)} ${show(arg)})"
     case ExprList(items) => s"<List [${items map show mkString ","}]>"
     case ExprTuple(items) => s"<Tuple (${items map show mkString ","})>"
+    case ExprBlock(lines) => s"{ ${lines map Binding.show mkString " ; "} }"
   }
 }

@@ -2,7 +2,7 @@ package sircle_lang
 
 import OpType.{Associativity, LeftAssoc, OpType, RightAssoc}
 import PrefixType.PrefixType
-import TokenType.{EQ, IDENTIFIER, RIGHT_BRACKET, TokenType}
+import TokenType.TokenType
 
 class Parser(val tokens: List[Token]) {
   val opRules: Array[(Associativity, Map[TokenType, OpType])] = Array(
@@ -71,6 +71,12 @@ class Parser(val tokens: List[Token]) {
 
   def lookAhead(tokenTypes: List[TokenType]): Boolean =
     tokenTypes contains peek.tokenType
+
+  def lookForward(tokenTypes: List[TokenType], i: Int = 0): Boolean = tokenTypes match {
+    case Nil => true
+    case _ if i >= current.length => false
+    case x :: xs => current(i).tokenType == x && lookForward(xs, i + 1)
+  }
 
 
   val unaryRules: Map[TokenType, PrefixType] = Map(
@@ -159,6 +165,9 @@ class Parser(val tokens: List[Token]) {
           case Nil => ExprValue(ValList(AnyType, Nil))
           case x => ExprList(x)
         }
+      case TokenType.LEFT_BRACE =>
+        val xs = parseBindingList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
+        ExprBlock(xs)
       case TokenType.INT => ExprValue(ValInt(token.lexeme.asInstanceOf[Int]))
       case TokenType.DOUBLE => ExprValue(ValDouble(token.lexeme.asInstanceOf[Double]))
       case TokenType.STRING => ExprValue(ValString(token.lexeme.asInstanceOf[String]))
@@ -184,12 +193,26 @@ class Parser(val tokens: List[Token]) {
     }
   }
 
-  def parseExprList(endToken: TokenType): List[Expr] =
+  def parseBindingList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Binding] =
+    if (matchAhead(endToken)) {
+      Nil
+    } else {
+      val binding = parseBinding
+      if (matchAhead(sepToken)) {
+        binding :: parseBindingList(endToken, sepToken)
+      } else if (matchAhead(endToken))
+        binding :: Nil
+      else {
+        throw ParseError(s"Expecting pairing token $endToken, but found ${peek.tokenType}")
+      }
+    }
+
+  def parseExprList(endToken: TokenType, sepToken: TokenType = TokenType.COMMA): List[Expr] =
     if (matchAhead(endToken)) {
       Nil
     } else {
       val expr = parseExpr
-      if (matchAhead(TokenType.COMMA)) {
+      if (matchAhead(sepToken)) {
         expr :: parseExprList(endToken)
       } else if (matchAhead(endToken))
         expr :: Nil
@@ -198,7 +221,7 @@ class Parser(val tokens: List[Token]) {
       }
     }
 
-  def parseList: List[Expr] = parseExprList(RIGHT_BRACKET)
+  def parseList: List[Expr] = parseExprList(TokenType.RIGHT_BRACKET)
 
   def parseTypeExpr: TypeExpr = {
     val expr = parseTypeTerm
@@ -233,8 +256,19 @@ class Parser(val tokens: List[Token]) {
   def parseBinding: Binding =
     if (matchAhead(TokenType.KW_DEF))
       parseValBinding
+    else if (lookForward(List(TokenType.IDENTIFIER, TokenType.EQ)))
+      parseRebinding
     else
       ExprBinding(parseExpr)
+
+
+  def parseRebinding: Binding =
+    expect(TokenType.IDENTIFIER, {token =>
+      val name = token.content
+      advance
+      ReBinding(name, parseExpr)
+    })
+
 
   def parseValBinding: Binding =
     expect(TokenType.IDENTIFIER, { token =>
