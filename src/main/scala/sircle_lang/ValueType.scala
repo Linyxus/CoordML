@@ -9,6 +9,9 @@ sealed trait ValueType {
       case _ => this == that
     }
   }
+
+  def <~~(value: Value): Boolean =
+    value.valueType === this
 }
 
 case object AnyType extends ValueType
@@ -26,3 +29,5 @@ case object BooleanType extends ValueType
 case class LambdaType(argType: ValueType) extends ValueType
 
 case class ListType(itemType: ValueType) extends ValueType
+
+case class TupleType(itemTypes: List[ValueType]) extends ValueType

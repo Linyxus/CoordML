@@ -219,6 +219,7 @@ class Evaluator {
     expr match {
       case ExprValue(value) => value
       case ExprIdentifier(name) => locateValue(name, localVal)
+      case ExprTuple(items) => ValTuple(items map (x => evalExpr(x, localVal)))
       case ExprLambda(argName, argType, body) =>
         val t = evalTypeExpr(argType)
         ValLambda(argName, t, body, localVal)

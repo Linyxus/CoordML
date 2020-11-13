@@ -17,7 +17,7 @@ object Repl extends App {
     val parser = new Parser(tokens)
     try {
       val binding = parser.parseBinding
-//      println(binding)
+      println(Binding show binding)
       println(Value show evaluator.executeBinding(binding))
     } catch {
       case e: ParseError => println("Parse error: " + e.errorMsg)

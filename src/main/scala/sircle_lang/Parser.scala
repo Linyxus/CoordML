@@ -2,7 +2,7 @@ package sircle_lang
 
 import OpType.{Associativity, LeftAssoc, OpType, RightAssoc}
 import PrefixType.PrefixType
-import TokenType.{EQ, IDENTIFIER, TokenType}
+import TokenType.{EQ, IDENTIFIER, RIGHT_BRACKET, TokenType}
 
 class Parser(val tokens: List[Token]) {
   val opRules: Array[(Associativity, Map[TokenType, OpType])] = Array(
@@ -148,11 +148,11 @@ class Parser(val tokens: List[Token]) {
     val token = advance
     token.tokenType match {
       case TokenType.LEFT_PAREN =>
-        val expr = parseExpr
-        if (matchAhead(TokenType.RIGHT_PAREN)) {
-          expr
-        } else {
-          throw ParseError("Unmatched parens")
+        val xs = parseExprList(TokenType.RIGHT_PAREN)
+        xs match {
+          case Nil => ExprValue(ValUnit)
+          case expr :: Nil => expr
+          case _ => ExprTuple(xs)
         }
       case TokenType.LEFT_BRACKET =>
         parseList match {
@@ -184,19 +184,21 @@ class Parser(val tokens: List[Token]) {
     }
   }
 
-  def parseList: List[Expr] =
-    if (matchAhead(TokenType.RIGHT_BRACKET)) {
+  def parseExprList(endToken: TokenType): List[Expr] =
+    if (matchAhead(endToken)) {
       Nil
     } else {
       val expr = parseExpr
       if (matchAhead(TokenType.COMMA)) {
-        expr :: parseList
-      } else if (matchAhead(TokenType.RIGHT_BRACKET))
+        expr :: parseExprList(endToken)
+      } else if (matchAhead(endToken))
         expr :: Nil
       else {
-        throw ParseError(s"List elements should be separated by comma.")
+        throw ParseError(s"Expecting pairing token $endToken.")
       }
     }
+
+  def parseList: List[Expr] = parseExprList(RIGHT_BRACKET)
 
   def parseTypeExpr: TypeExpr = {
     val expr = parseTypeTerm

@@ -8,6 +8,7 @@ trait TreeWalkDesugar {
     case ExprApp(func, arg) => desugar(ExprApp(transform(func), transform(arg)))
     case ExprLambda(argName, argType, body) => desugar(ExprLambda(argName, argType, transform(body)))
     case ExprList(items) => desugar(ExprList(items map transform))
+    case ExprTuple(items) => desugar(ExprTuple(items map transform))
     case x => desugar(x)
   }
 }

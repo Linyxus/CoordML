@@ -36,6 +36,10 @@ case class ValList(itemType: ValueType, items: List[Value]) extends Value {
   override val valueType: ValueType = ListType(itemType)
 }
 
+case class ValTuple(items: List[Value]) extends Value {
+  override val valueType: ValueType = TupleType(items.map(_.valueType))
+}
+
 object Value {
   def show(value: Value): String = value match {
     case ValInt(v) => v.toString
@@ -45,5 +49,6 @@ object Value {
     case ValBoolean(v) => if (v) "True" else "False"
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
     case ValList(itemType, items) => s"[${items map show mkString ", "}]:$itemType"
+    case ValTuple(items) => s"(${items map show mkString ", "})"
   }
 }

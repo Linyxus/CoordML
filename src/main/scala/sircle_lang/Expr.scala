@@ -16,6 +16,10 @@ case class ExprApp(func: Expr, arg: Expr) extends Expr
 
 case class ExprList(items: List[Expr]) extends Expr
 
+case class ExprTuple(items: List[Expr]) extends Expr
+
+case class ExprBlock(lines: List[Expr]) extends Expr
+
 object Expr {
   def show(expr: Expr): String = expr match {
     case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${show(left)} ${show(right)})"
@@ -26,5 +30,6 @@ object Expr {
     case ExprLambda(argName, argType, body) => s"<Lambda $argName: ${TypeExpr show argType} => ${Expr show body}>"
     case ExprApp(func, arg) => s"(${show(func)} ${show(arg)})"
     case ExprList(items) => s"<List [${items map show mkString ","}]>"
+    case ExprTuple(items) => s"<Tuple (${items map show mkString ","})>"
   }
 }
