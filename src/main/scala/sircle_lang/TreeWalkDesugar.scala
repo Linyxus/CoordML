@@ -9,6 +9,7 @@ trait TreeWalkDesugar {
     case ExprLambda(argName, argType, body) => desugar(ExprLambda(argName, argType, transform(body)))
     case ExprList(items) => desugar(ExprList(items map transform))
     case ExprTuple(items) => desugar(ExprTuple(items map transform))
+    case ExprIf(cond, left, right) => desugar(ExprIf(transform(cond), transform(left), right map transform))
     case x => desugar(x)
   }
 }
