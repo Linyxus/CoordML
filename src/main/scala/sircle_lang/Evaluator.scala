@@ -171,6 +171,14 @@ class Evaluator {
           ValList(x.asInstanceOf[ValList].itemType, l.tail)
       }
     ),
+    "length" -> ValBuiltin(
+      List(ListType(AnyType)),
+      args => {
+        val x :: Nil = args
+        val l = x.asInstanceOf[ValList].items
+        ValInt(x.asInstanceOf[ValList].items.length)
+      }
+    ),
     "show" -> ValBuiltin(
       List(IntType),
       args => {
@@ -199,7 +207,7 @@ class Evaluator {
       x._1 == key && pred(x._2)
     } match {
       case Some(value) => value._2
-      case None => throw RuntimeError(s"Can not locate name $key.")
+      case None => throw RuntimeError(s"Can not locate appropriate binding for name $key.")
     }
 
   def locateValue(name: String, local: List[(String, Value)], pred: Value => Boolean = _ => true): Value =
@@ -246,7 +254,7 @@ class Evaluator {
       v
     case ExprBinding(expr) =>
       val x = desugarExpr(expr)
-      evalExpr(x)
+      evalExpr(x, localVal)
 
     case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
   }
@@ -283,7 +291,7 @@ class Evaluator {
     case ExprEffect(expr) => evalExpr(desugarExpr(expr), localVal)
   }
 
-  def evalExpr(expr: Expr, localVal: List[(String, Value)] = Nil): Value =
+  def evalExpr(expr: Expr, localVal: List[(String, Value)]): Value =
     expr match {
       case ExprValue(value) => value
       case ExprIdentifier(name) => locateValue(name, localVal)
@@ -324,17 +332,16 @@ class Evaluator {
         } else
           throw RuntimeError("Type mismatch.")
 
-      case ExprIf(cond, left, right) => {
+      case ExprIf(cond, left, right) =>
         val c = evalExpr(cond, localVal)
         if (c.valueType == BooleanType) {
           if (c.asInstanceOf[ValBoolean].value) {
-            evalExpr(left)
+            evalExpr(left, localVal)
           } else right match {
-            case Some(value) => evalExpr(value)
+            case Some(value) => evalExpr(value, localVal)
             case None => ValUnit
           }
         } else throw RuntimeError(s"Expect if condition type Boolean, but got ${c.valueType}.")
-      }
       case _ => throw RuntimeError(s"Unimplemented expr ${Expr show expr}.")
     }
 }
