@@ -66,6 +66,41 @@ class Evaluator {
         ValBoolean(x.asInstanceOf[ValBoolean].value || y.asInstanceOf[ValBoolean].value)
       }
     ),
+    "eq" -> ValBuiltin(
+      List(AnyType, AnyType),
+      args => {
+        val x :: y :: Nil = args
+        ValBoolean(x == y)
+      }
+    ),
+    "lt" -> ValBuiltin(
+      List(IntType, IntType),
+      args => {
+        val x :: y :: Nil = args
+        ValBoolean(x.asInstanceOf[ValInt].value < y.asInstanceOf[ValInt].value)
+      }
+    ),
+    "le" -> ValBuiltin(
+      List(IntType, IntType),
+      args => {
+        val x :: y :: Nil = args
+        ValBoolean(x.asInstanceOf[ValInt].value <= y.asInstanceOf[ValInt].value)
+      }
+    ),
+    "gt" -> ValBuiltin(
+      List(IntType, IntType),
+      args => {
+        val x :: y :: Nil = args
+        ValBoolean(x.asInstanceOf[ValInt].value > y.asInstanceOf[ValInt].value)
+      }
+    ),
+    "ge" -> ValBuiltin(
+      List(IntType, IntType),
+      args => {
+        val x :: y :: Nil = args
+        ValBoolean(x.asInstanceOf[ValInt].value >= y.asInstanceOf[ValInt].value)
+      }
+    ),
     "notF" -> ValBuiltin(
       List(BooleanType),
       args => {
@@ -282,6 +317,6 @@ class Evaluator {
           }
         } else throw RuntimeError(s"Expect if condition type Boolean, but got ${c.valueType}.")
       }
-      case _ => throw RuntimeError("Unimplemented")
+      case _ => throw RuntimeError(s"Unimplemented expr ${Expr show expr}.")
     }
 }
