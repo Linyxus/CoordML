@@ -192,6 +192,8 @@ class Evaluator {
 
   var valueBindings: List[(String, Value)] = Nil
 
+  var variableEnv: SymbolBinding.Env = Nil
+
   def locateList[A, B](key: A, l: List[(A, B)], pred: B => Boolean = (x: Any) => true): B =
     l find { x =>
       x._1 == key && pred(x._2)
@@ -201,7 +203,7 @@ class Evaluator {
     }
 
   def locateValue(name: String, local: List[(String, Value)], pred: Value => Boolean = _ => true): Value =
-    locateList(name, local :++ valueBindings :++ valuePrelude, pred)
+    locateList(name, local :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude, pred)
 
   def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType =
     locateList(name, local :++ typePrelude)
@@ -231,7 +233,6 @@ class Evaluator {
   def executeBinding(binding: Binding, localVal: List[(String, Value)] = Nil): Value = binding match {
     case ValBinding(name, valType, expr) =>
       val t = evalTypeExpr(valType)
-      val e = evalExpr(desugarExpr(expr), localVal)
 
       (valuePrelude :++ Nil) find { x =>
         x._1 == name && x._2.valueType === t
@@ -240,29 +241,46 @@ class Evaluator {
         case None =>
       }
 
-      if (t === e.valueType) {
-        valueBindings = (name -> e) :: valueBindings
-        e
-      } else
-        throw RuntimeError(s"Type mismatch in binding: $t and ${e.valueType}")
+      val v = getValue(expr, t, localVal)
+      valueBindings = (name -> v) :: valueBindings
+      v
     case ExprBinding(expr) =>
       val x = desugarExpr(expr)
       evalExpr(x)
 
-    case ReBinding(name, expr) =>
-      val e = evalExpr(desugarExpr(expr), localVal)
-      valueBindings find {
-        _._1 == name
-      } match {
-        case Some(value) =>
-          if (value._2.valueType == e.valueType) {
-            valueBindings = (name -> e) :: valueBindings
-            e
-          } else throw RuntimeError(s"Type mismatch between binding name $name and value ${Value show value._2}.")
-        case None => throw RuntimeError(s"Can not find binding name $name.")
+    case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
+  }
+
+  def getValue(expr: Expr, expect: ValueType, localVal: List[(String, Value)]): Value = {
+    val v = evalExpr(desugarExpr(expr), localVal)
+    if (expect === v.valueType) v else throw RuntimeError(s"Type mismatch: $expect and ${v.valueType}.")
+  }
+
+  def executeEffect(effect: Effect, localVal: List[(String, Value)]): Value = effect match {
+    case ValueBindEffect(name, valType, expr) =>
+      val t = evalTypeExpr(valType)
+
+      valuePrelude find { x => x._1 == name && x._2.valueType === t } match {
+        case Some(_) => throw RuntimeError(s"Cannot override built-in symbol name $name.")
+        case None =>
+          val v = getValue(expr, t, localVal)
+          variableEnv = new SymbolBinding(name, v) :: variableEnv
+          v
       }
 
-    case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
+    case AssignEffect(name, expr) =>
+      val v = evalExpr(desugarExpr(expr), localVal)
+
+      variableEnv.find(_.name == name) match {
+        case Some(binding) =>
+          if (binding.value.valueType === v.valueType) {
+            binding.value = v
+            v
+          } else throw RuntimeError(s"Type mismatch: assigning ${v.valueType} to ${binding.value.valueType} symbol.")
+        case None => throw RuntimeError(s"Can not assign value to undefined symbol $name.")
+      }
+
+    case ExprEffect(expr) => evalExpr(desugarExpr(expr), localVal)
   }
 
   def evalExpr(expr: Expr, localVal: List[(String, Value)] = Nil): Value =
@@ -273,9 +291,9 @@ class Evaluator {
       case ExprBlock(bindings) => bindings match {
         case Nil => ValUnit
         case _ =>
-          val origBindings = valueBindings
-          val ret = (bindings map (x => executeBinding(x))).last
-          valueBindings = origBindings
+          val origEnv = variableEnv
+          val ret = (bindings map (x => executeEffect(x, localVal))).last
+          variableEnv = origEnv
           ret
       }
       case ExprLambda(argName, argType, body) =>

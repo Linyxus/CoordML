@@ -166,7 +166,7 @@ class Parser(val tokens: List[Token]) {
           case x => ExprList(x)
         }
       case TokenType.LEFT_BRACE =>
-        val xs = parseBindingList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
+        val xs = parseEffectList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
         ExprBlock(xs)
       case TokenType.KW_IF => parseIf
       case TokenType.INT => ExprValue(ValInt(token.lexeme.asInstanceOf[Int]))
@@ -205,18 +205,23 @@ class Parser(val tokens: List[Token]) {
     })
   }
 
-  def parseBindingList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Binding] =
+  def parseEffectList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Effect] =
     if (matchAhead(endToken)) {
       Nil
     } else {
-      val binding = parseBinding
-      if (matchAhead(sepToken)) {
-        binding :: parseBindingList(endToken, sepToken)
-      } else if (matchAhead(endToken))
-        binding :: Nil
-      else {
-        throw ParseError(s"Expecting pairing token $endToken, but found ${peek.tokenType}")
+      val effect = parseEffect
+      if (matchAhead(endToken))
+        effect :: Nil
+      else if (lookForward(List(sepToken, endToken))) {
+        advance
+        advance
+        effect :: Nil
       }
+      else if (matchAhead(sepToken)) {
+        effect :: parseEffectList(endToken, sepToken)
+      }
+      else
+        throw ParseError(s"Expecting pairing token $endToken, but found ${peek.tokenType}")
     }
 
   def parseExprList(endToken: TokenType, sepToken: TokenType = TokenType.COMMA): List[Expr] =
@@ -265,21 +270,37 @@ class Parser(val tokens: List[Token]) {
     }
   }
 
+  def parseEffect: Effect =
+    if (matchAhead(TokenType.KW_DEF))
+      parseValueBindEffect
+    else if (lookForward(List(TokenType.IDENTIFIER, TokenType.EQ))) {
+      parseAssignEffect
+    } else {
+      ExprEffect(parseExpr)
+    }
+
+  def parseValueBindEffect: Effect =
+    expect(TokenType.IDENTIFIER, { token =>
+      val name = token.content
+      val valType = if (matchAhead(TokenType.COLON)) parseTypeExpr else TypeExprIdentifier("Any")
+      expect(TokenType.EQ, { _ =>
+        val expr = parseExpr
+        ValueBindEffect(name, valType, expr)
+      })
+    })
+
+  def parseAssignEffect: Effect =
+    expect(TokenType.IDENTIFIER, { token =>
+      val name = token.content
+      advance
+      AssignEffect(name, parseExpr)
+    })
+
   def parseBinding: Binding =
     if (matchAhead(TokenType.KW_DEF))
       parseValBinding
-    else if (lookForward(List(TokenType.IDENTIFIER, TokenType.EQ)))
-      parseRebinding
     else
       ExprBinding(parseExpr)
-
-
-  def parseRebinding: Binding =
-    expect(TokenType.IDENTIFIER, {token =>
-      val name = token.content
-      advance
-      ReBinding(name, parseExpr)
-    })
 
 
   def parseValBinding: Binding =

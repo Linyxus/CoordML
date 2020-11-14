@@ -18,7 +18,7 @@ case class ExprList(items: List[Expr]) extends Expr
 
 case class ExprTuple(items: List[Expr]) extends Expr
 
-case class ExprBlock(bindings: List[Binding]) extends Expr
+case class ExprBlock(effects: List[Effect]) extends Expr
 
 case class ExprIf(cond: Expr, left: Expr, right: Option[Expr]) extends Expr
 
@@ -33,7 +33,7 @@ object Expr {
     case ExprApp(func, arg) => s"(${show(func)} ${show(arg)})"
     case ExprList(items) => s"<List [${items map show mkString ","}]>"
     case ExprTuple(items) => s"<Tuple (${items map show mkString ","})>"
-    case ExprBlock(lines) => s"{ ${lines map Binding.show mkString " ; "} }"
+    case ExprBlock(lines) => s"{ ${lines map Effect.show mkString " ; "} }"
     case ExprIf(cond, left, right) => s"if ${show(cond)} then ${show(left)}" + (right match {
       case None => ""
       case Some(value) => s" else ${show(value)}"
