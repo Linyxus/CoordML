@@ -189,6 +189,8 @@ class Evaluator {
     ),
   )
 
+  type BindingEnv[A] = List[(String, A)]
+
   val typePrelude: Map[String, ValueType] = Map(
     "Any" -> AnyType,
     "Int" -> IntType,
@@ -198,7 +200,7 @@ class Evaluator {
     "Boolean" -> BooleanType,
   )
 
-  var valueBindings: List[(String, Value)] = Nil
+  var valueBindings: BindingEnv[Value] = Nil
 
   var variableEnv: SymbolBinding.Env = Nil
 
@@ -291,7 +293,7 @@ class Evaluator {
     case ExprEffect(expr) => evalExpr(desugarExpr(expr), localVal)
   }
 
-  def evalExpr(expr: Expr, localVal: List[(String, Value)]): Value =
+  def evalExpr(expr: Expr, localVal: BindingEnv[Value]): Value =
     expr match {
       case ExprValue(value) => value
       case ExprIdentifier(name) => locateValue(name, localVal)
@@ -342,6 +344,55 @@ class Evaluator {
             case None => ValUnit
           }
         } else throw RuntimeError(s"Expect if condition type Boolean, but got ${c.valueType}.")
+
+      case ExprFor(combinators, expr) =>
+        val forEnv = generateForEnvs(combinators, localVal)
+        forEnv.map { x => evalExpr(desugarExpr(expr), x :++ localVal) } match {
+          case Nil => ValList(AnyType, Nil)
+          case xs =>
+            val t = xs.head.valueType
+            xs.foreach { x =>
+              if (!(x.valueType === t)) throw RuntimeError(s"Resulting value types do not match in for expression.")
+            }
+            ValList(t, xs)
+        }
+
       case _ => throw RuntimeError(s"Unimplemented expr ${Expr show expr}.")
+    }
+
+  def generateForEnvs(comb: List[ForCombinator], localVal: BindingEnv[Value]): List[BindingEnv[Value]] = {
+    var ret: List[BindingEnv[Value]] = List(Nil)
+    for (c <- comb) {
+      c match {
+        case ForBind(name, expr) =>
+          ret = extendForEnvs(ret, name, expr, localVal)
+        case ForFilter(expr) =>
+          ret = filterForEnvs(ret, expr, localVal)
+      }
+    }
+    ret
+  }
+
+  def extendForEnvs(env: List[BindingEnv[Value]], name: String, expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
+    env flatMap { x => extendForEnv(x, name, expr, localVal) }
+
+  def extendForEnv(env: BindingEnv[Value], name: String, expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
+    env find { x => x._1 == name } match {
+      case Some(_) => throw RuntimeError(s"Duplicated symbol $name in for expansion.")
+      case None =>
+        val v = evalExpr(desugarExpr(expr), env :++ localVal)
+        if (v.valueType === ListType(AnyType))
+          v.asInstanceOf[ValList].items.map { x => (name -> x) :: env }
+        else
+          throw RuntimeError(s"Expecting lists but found ${v.valueType} in for expansion.")
+    }
+
+  def filterForEnvs(env: List[BindingEnv[Value]], expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
+    env.filter { x =>
+      val v = evalExpr(desugarExpr(expr), x :++ localVal)
+      if (v.valueType == BooleanType)
+        v.asInstanceOf[ValBoolean].value
+      else
+        throw RuntimeError(s"Unexpected value type ${v.valueType} in for filter.")
     }
 }

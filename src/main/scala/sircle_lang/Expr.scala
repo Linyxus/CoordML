@@ -22,6 +22,8 @@ case class ExprBlock(effects: List[Effect]) extends Expr
 
 case class ExprIf(cond: Expr, left: Expr, right: Option[Expr]) extends Expr
 
+case class ExprFor(combinators: List[ForCombinator], expr: Expr) extends Expr
+
 object Expr {
   def show(expr: Expr): String = expr match {
     case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${show(left)} ${show(right)})"
@@ -38,5 +40,6 @@ object Expr {
       case None => ""
       case Some(value) => s" else ${show(value)}"
     })
+    case ExprFor(combinators, expr) => s"for ${combinators map ForCombinator.show mkString ", "} do ${show(expr)}"
   }
 }

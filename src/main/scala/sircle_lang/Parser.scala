@@ -2,16 +2,13 @@ package sircle_lang
 
 import OpType.{Associativity, LeftAssoc, OpType, RightAssoc}
 import PrefixType.PrefixType
-import TokenType.TokenType
+import TokenType.{IDENTIFIER, KW_DEF, TokenType}
 
 class Parser(val tokens: List[Token]) {
   val opRules: Array[(Associativity, Map[TokenType, OpType])] = Array(
     (RightAssoc, Map(
       TokenType.DOLLAR -> OpType.DOLLAR
     )),
-    //    (RightAssoc, Map(
-    //      TokenType.EQ_GT -> OpType.MAPS_TO
-    //    )),
     (LeftAssoc, Map(
       TokenType.AND -> OpType.AND,
       TokenType.OR -> OpType.OR
@@ -169,6 +166,9 @@ class Parser(val tokens: List[Token]) {
         val xs = parseEffectList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
         ExprBlock(xs)
       case TokenType.KW_IF => parseIf
+      case TokenType.KW_FOR =>
+        val combinators = parseForCombinatorList
+        ExprFor(combinators, parseExpr)
       case TokenType.INT => ExprValue(ValInt(token.lexeme.asInstanceOf[Int]))
       case TokenType.DOUBLE => ExprValue(ValDouble(token.lexeme.asInstanceOf[Double]))
       case TokenType.STRING => ExprValue(ValString(token.lexeme.asInstanceOf[String]))
@@ -204,6 +204,27 @@ class Parser(val tokens: List[Token]) {
       } else ExprIf(cond, left, None)
     })
   }
+
+  def parseForCombinator: ForCombinator =
+    if (lookForward(List(TokenType.IDENTIFIER, TokenType.LEFT_ARROW)))
+      expect(TokenType.IDENTIFIER, { token =>
+        val name = token.content
+        advance
+        ForBind(name, parseExpr)
+      })
+    else
+      ForFilter(parseExpr)
+
+  def parseForCombinatorList: List[ForCombinator] =
+    if (matchAhead(TokenType.KW_DO)) Nil
+    else {
+      val comb = parseForCombinator
+      if (matchAhead(TokenType.KW_DO))
+        comb :: Nil
+      else if (matchAhead(TokenType.COMMA))
+        comb :: parseForCombinatorList
+      else throw ParseError(s"Expecting DO or COMMA, but see ${peek.tokenType}.")
+    }
 
   def parseEffectList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Effect] =
     if (matchAhead(endToken)) {
