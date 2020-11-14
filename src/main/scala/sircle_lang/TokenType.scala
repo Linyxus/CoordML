@@ -3,7 +3,7 @@ package sircle_lang
 object TokenType extends Enumeration {
   type TokenType = Value
   val
-    KW_DEF, KW_TYPE,
+    KW_DEF, KW_TYPE, KW_IF, KW_THEN, KW_ELSE,
     PLUS, MINUS, ASTERISK, SLASH, AND, OR, DOLLAR, IN,
     NOT, GT_GT, BAR_BAR, GT, LT, GT_EQ, LT_EQ, EQ, EQ_GT,
     RIGHT_ARROW,

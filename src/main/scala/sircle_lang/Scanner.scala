@@ -150,6 +150,9 @@ class Scanner(val source: String) {
         source.substring(start, current) match {
           case "def" => makeToken(KW_DEF)
           case "type" => makeToken(KW_TYPE)
+          case "if" => makeToken(KW_IF)
+          case "then" => makeToken(KW_THEN)
+          case "else" => makeToken(KW_ELSE)
           case "and" => makeToken(AND)
           case "or" => makeToken(OR)
           case "not" => makeToken(NOT)

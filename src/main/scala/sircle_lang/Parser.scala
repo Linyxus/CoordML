@@ -168,6 +168,7 @@ class Parser(val tokens: List[Token]) {
       case TokenType.LEFT_BRACE =>
         val xs = parseBindingList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
         ExprBlock(xs)
+      case TokenType.KW_IF => parseIf
       case TokenType.INT => ExprValue(ValInt(token.lexeme.asInstanceOf[Int]))
       case TokenType.DOUBLE => ExprValue(ValDouble(token.lexeme.asInstanceOf[Double]))
       case TokenType.STRING => ExprValue(ValString(token.lexeme.asInstanceOf[String]))
@@ -191,6 +192,17 @@ class Parser(val tokens: List[Token]) {
       case _ =>
         throw ParseError(s"Unexpected token: $token")
     }
+  }
+
+  def parseIf: Expr = {
+    val cond = parseExpr
+    expect(TokenType.KW_THEN, { _ =>
+      val left = parseExpr
+      if (matchAhead(TokenType.KW_ELSE)) {
+        val right = parseExpr
+        ExprIf(cond, left, Some(right))
+      } else ExprIf(cond, left, None)
+    })
   }
 
   def parseBindingList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Binding] =

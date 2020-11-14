@@ -271,6 +271,17 @@ class Evaluator {
         } else
           throw RuntimeError("Type mismatch.")
 
+      case ExprIf(cond, left, right) => {
+        val c = evalExpr(cond, localVal)
+        if (c.valueType == BooleanType) {
+          if (c.asInstanceOf[ValBoolean].value) {
+            evalExpr(left)
+          } else right match {
+            case Some(value) => evalExpr(value)
+            case None => ValUnit
+          }
+        } else throw RuntimeError(s"Expect if condition type Boolean, but got ${c.valueType}.")
+      }
       case _ => throw RuntimeError("Unimplemented")
     }
 }

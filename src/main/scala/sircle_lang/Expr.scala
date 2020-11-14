@@ -20,6 +20,8 @@ case class ExprTuple(items: List[Expr]) extends Expr
 
 case class ExprBlock(bindings: List[Binding]) extends Expr
 
+case class ExprIf(cond: Expr, left: Expr, right: Option[Expr]) extends Expr
+
 object Expr {
   def show(expr: Expr): String = expr match {
     case ExprBinary(left, op, right) if op == OpType.DOLLAR => s"(${show(left)} ${show(right)})"
@@ -32,5 +34,9 @@ object Expr {
     case ExprList(items) => s"<List [${items map show mkString ","}]>"
     case ExprTuple(items) => s"<Tuple (${items map show mkString ","})>"
     case ExprBlock(lines) => s"{ ${lines map Binding.show mkString " ; "} }"
+    case ExprIf(cond, left, right) => s"if ${show(cond)} then ${show(left)}" + (right match {
+      case None => ""
+      case Some(value) => s" else ${show(value)}"
+    })
   }
 }
