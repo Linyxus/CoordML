@@ -312,27 +312,28 @@ class Evaluator {
       case ExprApp(func, arg) =>
         val x = evalExpr(arg, localVal)
         val xT = x.valueType
-        val expectT = LambdaType(xT)
-        val f = func match {
-          case ExprIdentifier(name) => locateValue(name, localVal, expectT === _.valueType)
-          case _ => evalExpr(func, localVal)
+
+        def expectFunc(f: Value): Boolean = f match {
+          case ValLambda(_, argType, _, _) => argType <~~ x
+          case ValBuiltin(argSig, _, _) => argSig.head <~~ x
         }
-        if (expectT === f.valueType) {
-          f match {
-            case ValBuiltin(argSig, func, resolved) =>
-              val resolvedP = resolved :+ x
-              if (resolvedP.length == argSig.length) {
-                func(resolvedP)
-              } else {
-                ValBuiltin(argSig, func, resolvedP)
-              }
-            case ValLambda(argName, _, body, lexical) =>
-              val innerLocal = (argName -> x) :: (lexical :++ localVal)
-              evalExpr(body, innerLocal)
-            case _ => throw RuntimeError("Error in type checker.")
-          }
-        } else
-          throw RuntimeError("Type mismatch.")
+
+        (func match {
+          case ExprIdentifier(name) => locateValue(name, localVal, expectFunc)
+          case _ => evalExpr(func, localVal)
+        }) match {
+          case ValBuiltin(argSig, func, resolved) =>
+            val resolvedP = resolved :+ x
+            if (resolvedP.length == argSig.length) {
+              func(resolvedP)
+            } else {
+              ValBuiltin(argSig, func, resolvedP)
+            }
+          case ValLambda(argName, _, body, lexical) =>
+            val innerLocal = (argName -> x) :: (lexical :++ localVal)
+            evalExpr(body, innerLocal)
+          case _ => throw RuntimeError("Error in type checker.")
+        }
 
       case ExprIf(cond, left, right) =>
         val c = evalExpr(cond, localVal)

@@ -9,12 +9,13 @@ sealed trait ValueType {
       case _ => this == that
     }
   }
-
   def <~~(value: Value): Boolean =
-    value.valueType === this
+    value.valueType == this
 }
 
-case object AnyType extends ValueType
+case object AnyType extends ValueType {
+  override def <~~(value: Value): Boolean = true
+}
 
 case object IntType extends ValueType
 
