@@ -31,7 +31,12 @@ case object BooleanType extends ValueType
 
 case class LambdaType(argType: ValueType) extends ValueType
 
-case class ListType(itemType: ValueType) extends ValueType
+case class ListType(itemType: ValueType) extends ValueType {
+  override def <~~(value: Value): Boolean = if (itemType == AnyType) value.valueType match {
+    case ListType(_) => true
+    case _ => false
+  } else super.<~~(value)
+}
 
 case class TupleType(itemTypes: List[ValueType]) extends ValueType
 

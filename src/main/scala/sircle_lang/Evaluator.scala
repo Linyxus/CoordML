@@ -70,7 +70,11 @@ class Evaluator {
       List(AnyType, AnyType),
       args => {
         val x :: y :: Nil = args
-        ValBoolean(x == y)
+        (x, y) match {
+          case (ValList(_, Nil), ValList(_, Nil)) => ValBoolean(true)
+          case _ =>
+            ValBoolean(x == y)
+        }
       }
     ),
     "lt" -> ValBuiltin(
@@ -187,6 +191,32 @@ class Evaluator {
         ValString(l.toString)
       }
     ),
+    "get" -> ValBuiltin(
+      List(MappingType(Nil), StringType),
+      args => {
+        val fm :: fi :: Nil = args
+        val m = fm.asInstanceOf[ValMapping]
+        val i = fi.asInstanceOf[ValString]
+        m.pairs get i.value match {
+          case Some(value) => value
+          case None => throw RuntimeError(s"Can not get field ${i.value} from mapping ${Value show fm}.")
+        }
+      }
+    ),
+    "keysOf" -> ValBuiltin(
+      List(MappingType(Nil)),
+      args => {
+        val fm :: Nil = args
+        val m = fm.asInstanceOf[ValMapping].pairs
+        ValList(StringType, m.keys map ValString toList)
+      }
+    ),
+    "getGlobalBindings" -> ValBuiltin(
+      List(UnitType),
+      _ => {
+        ValMapping(Map.from(valueBindings))
+      }
+    )
   )
 
   type BindingEnv[A] = List[(String, A)]
@@ -200,7 +230,12 @@ class Evaluator {
     "Boolean" -> BooleanType,
   )
 
-  var valueBindings: BindingEnv[Value] = Nil
+  var valueBindings: BindingEnv[Value] = List(
+    "sysInfo" -> ValMapping(Map(
+      "os" -> ValString("darwin"),
+      "sircleVersion" -> ValString("v0.0.0")
+    ))
+  )
 
   var variableEnv: SymbolBinding.Env = Nil
 

@@ -31,6 +31,9 @@ class Parser(val tokens: List[Token]) {
     )),
     (LeftAssoc, Map(
       TokenType.IN -> OpType.IN
+    )),
+    (LeftAssoc, Map(
+      TokenType.DOT -> OpType.GET
     ))
   )
 

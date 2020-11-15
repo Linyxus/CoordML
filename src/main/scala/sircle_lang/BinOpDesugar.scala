@@ -16,6 +16,7 @@ object BinOpDesugar extends TreeWalkDesugar {
     GT -> "gt",
     GE -> "ge",
     EQ -> "eq",
+    GET -> "get",
   )
 
   override def desugar(expr: Expr): Expr = expr match {

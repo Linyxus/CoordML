@@ -5,7 +5,7 @@ object OpType extends Enumeration {
   val
     DOLLAR, MAPS_TO, SEQ, PAR,
     AND, OR, GT, LT, GE, LE, EQ, NEQ,
-    PLUS, MINUS, MUL, DIV, IN
+    PLUS, MINUS, MUL, DIV, IN, GET
     = Value
 
   type Associativity = Value

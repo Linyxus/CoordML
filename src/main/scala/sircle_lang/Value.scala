@@ -54,6 +54,6 @@ object Value {
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
     case ValList(itemType, items) => s"[${items map show mkString ", "}]:$itemType"
     case ValTuple(items) => s"(${items map show mkString ", "})"
-    case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${x._2}" } mkString ", " } }"
+    case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", " } }"
   }
 }
