@@ -40,6 +40,10 @@ case class ValTuple(items: List[Value]) extends Value {
   override val valueType: ValueType = TupleType(items.map(_.valueType))
 }
 
+case class ValMapping(pairs: Map[String, Value]) extends Value {
+  override val valueType: ValueType = MappingType(pairs.toList map { x => (x._1, x._2.valueType) })
+}
+
 object Value {
   def show(value: Value): String = value match {
     case ValInt(v) => v.toString
@@ -50,5 +54,6 @@ object Value {
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
     case ValList(itemType, items) => s"[${items map show mkString ", "}]:$itemType"
     case ValTuple(items) => s"(${items map show mkString ", "})"
+    case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${x._2}" } mkString ", " } }"
   }
 }

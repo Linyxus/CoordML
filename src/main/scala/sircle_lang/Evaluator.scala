@@ -306,6 +306,11 @@ class Evaluator {
           variableEnv = origEnv
           ret
       }
+      case ExprMapping(pairs) => ValMapping(Map from {
+        pairs map { x =>
+          x._1 -> evalExpr(x._2, localVal)
+        }
+      })
       case ExprLambda(argName, argType, body) =>
         val t = evalTypeExpr(argType)
         ValLambda(argName, t, body, localVal)

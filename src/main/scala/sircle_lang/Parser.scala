@@ -163,8 +163,9 @@ class Parser(val tokens: List[Token]) {
           case x => ExprList(x)
         }
       case TokenType.LEFT_BRACE =>
-        val xs = parseEffectList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON)
-        ExprBlock(xs)
+        if (lookForward(List(TokenType.STRING, TokenType.RIGHT_ARROW)))
+          ExprMapping(parseMappingList)
+        else ExprBlock(parseEffectList(TokenType.RIGHT_BRACE, TokenType.SEMI_COLON))
       case TokenType.KW_IF => parseIf
       case TokenType.KW_FOR =>
         val combinators = parseForCombinatorList
@@ -225,6 +226,21 @@ class Parser(val tokens: List[Token]) {
         comb :: parseForCombinatorList
       else throw ParseError(s"Expecting DO or COMMA, but see ${peek.tokenType}.")
     }
+
+  def parseMappingList: List[(String, Expr)] =
+    if (matchAhead(TokenType.RIGHT_BRACE)) Nil
+    else
+      expect(TokenType.STRING, { token =>
+        val name = token.lexeme.toString
+        expect(TokenType.RIGHT_ARROW, { _ =>
+          val pair: (String, Expr) = (name, parseExpr)
+          if (matchAhead(TokenType.RIGHT_BRACE))
+            pair :: Nil
+          else if (matchAhead(TokenType.COMMA))
+            pair :: parseMappingList
+          else throw ParseError(s"Expecting RIGHT_BRACE or COMMA, but see ${peek.tokenType}.")
+        })
+      })
 
   def parseEffectList(endToken: TokenType, sepToken: TokenType = TokenType.SEMI_COLON): List[Effect] =
     if (matchAhead(endToken)) {

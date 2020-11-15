@@ -18,6 +18,8 @@ case class ExprList(items: List[Expr]) extends Expr
 
 case class ExprTuple(items: List[Expr]) extends Expr
 
+case class ExprMapping(pairs: List[(String, Expr)]) extends Expr
+
 case class ExprBlock(effects: List[Effect]) extends Expr
 
 case class ExprIf(cond: Expr, left: Expr, right: Option[Expr]) extends Expr
@@ -41,5 +43,6 @@ object Expr {
       case Some(value) => s" else ${show(value)}"
     })
     case ExprFor(combinators, expr) => s"for ${combinators map ForCombinator.show mkString ", "} do ${show(expr)}"
+    case ExprMapping(pairs) => s"<Mapping { ${pairs map { x => s"${x._1} -> ${Expr show x._2}" } mkString ", "} }>"
   }
 }
