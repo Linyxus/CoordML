@@ -339,9 +339,10 @@ class Parser(val tokens: List[Token]) {
   def parseBinding: Binding =
     if (matchAhead(TokenType.KW_DEF))
       parseValBinding
+    else if (matchAhead(TokenType.KW_TYPE))
+      parseTypeBinding
     else
       ExprBinding(parseExpr)
-
 
   def parseValBinding: Binding =
     expect(TokenType.IDENTIFIER, { token =>
@@ -353,6 +354,14 @@ class Parser(val tokens: List[Token]) {
       expect(TokenType.EQ, { _ =>
         val expr = parseExpr
         ValBinding(name, valType, expr)
+      })
+    })
+
+  def parseTypeBinding: Binding =
+    expect(TokenType.IDENTIFIER, { token =>
+      val name = token.content
+      expect(TokenType.EQ, { _ =>
+        TypeBinding(name, parseTypeExpr)
       })
     })
 }

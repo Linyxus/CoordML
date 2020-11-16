@@ -258,6 +258,8 @@ class Evaluator {
     ))
   )
 
+  var typeBindings: BindingEnv[ValueType] = Nil
+
   var variableEnv: SymbolBinding.Env = Nil
 
   def locateValueWithType(name: String, local: List[(String, Value)], expectType: ValueType): Value =
@@ -277,7 +279,7 @@ class Evaluator {
     }
 
   def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType = {
-    (local :++ typePrelude).find { x => x._1 == name } match {
+    (local :++ typeBindings :++ typePrelude).find { x => x._1 == name } match {
       case Some(value) => value._2
       case None => throw RuntimeError(s"Can not resolve type alias $name.")
     }
@@ -319,9 +321,19 @@ class Evaluator {
       val v = getValue(expr, t, localVal)
       valueBindings = (name -> v) :: valueBindings
       v
+
     case ExprBinding(expr) =>
       val x = desugarExpr(expr)
       evalExpr(x, localVal)
+
+    case TypeBinding(name, typeExpr) =>
+      typePrelude find { x => x._1 == name } match {
+        case Some(_) => throw RuntimeError(s"Can not override built-in type name $name.")
+        case None =>
+          val t = evalTypeExpr(typeExpr)
+          typeBindings = (name -> t) :: typeBindings
+          ValUnit
+      }
 
     case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
   }
