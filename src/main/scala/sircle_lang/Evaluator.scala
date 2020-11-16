@@ -279,6 +279,44 @@ class Evaluator {
 
         ValList(xs.items flatMap { x => f(x, ys.items) })
       }
+    ),
+    "mkTask" -> ValBuiltin(
+      List(StringType, MappingType(Nil), MappingType(Nil)),
+      args => {
+        val fs :: fxs :: fmeta :: Nil = args
+        val exe = fs.asInstanceOf[ValString]
+        val xs = fxs.asInstanceOf[ValMapping]
+        val meta = fmeta.asInstanceOf[ValMapping]
+        ValTask(SingletonTask(exe.value, xs.pairs, meta.pairs))
+      }
+    ),
+    "__seq" -> ValBuiltin(
+      List(TaskType, TaskType),
+      args => {
+        val fl :: fr :: Nil = args
+        val l = fl.asInstanceOf[ValTask].task
+        val r = fr.asInstanceOf[ValTask].task
+        ValTask(
+          (l, r) match {
+            case (SeqTask(xs), SeqTask(ys)) => SeqTask(xs :++ ys)
+            case (x, y) => SeqTask(x :: y :: Nil)
+          }
+        )
+      }
+    ),
+    "__par" -> ValBuiltin(
+      List(TaskType, TaskType),
+      args => {
+        val fl :: fr :: Nil = args
+        val l = fl.asInstanceOf[ValTask].task
+        val r = fr.asInstanceOf[ValTask].task
+        ValTask(
+          (l, r) match {
+            case (ParTask(xs), ParTask(ys)) => ParTask(xs :++ ys)
+            case (x, y) => ParTask(x :: y :: Nil)
+          }
+        )
+      }
     )
   )
 
@@ -292,6 +330,7 @@ class Evaluator {
     "Unit" -> UnitType,
     "Boolean" -> BooleanType,
     "List" -> ListType,
+    "Task" -> TaskType,
   )
 
   var valueBindings: BindingEnv[Value] = List(

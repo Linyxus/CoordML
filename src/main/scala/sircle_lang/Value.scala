@@ -44,6 +44,10 @@ case class ValMapping(pairs: Map[String, Value]) extends Value {
   override val valueType: ValueType = MappingType(pairs.toList map { x => (x._1, x._2.valueType) })
 }
 
+case class ValTask(task: Task) extends Value {
+  override val valueType: ValueType = TaskType
+}
+
 object Value {
   def show(value: Value): String = value match {
     case ValInt(v) => v.toString
@@ -55,6 +59,7 @@ object Value {
     case ValList(items) => s"[${items map show mkString ", "}]"
     case ValTuple(items) => s"(${items map show mkString ", "})"
     case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", " } }"
-    case ValBuiltin(argSig, func, _) => s"<builtin func with signature ${ argSig.map(_.toString) mkString " -> " }>"
+    case ValBuiltin(argSig, _, _) => s"<builtin func with signature ${ argSig.map(_.toString) mkString " -> " }>"
+    case ValTask(task) => Task show task
   }
 }

@@ -66,6 +66,8 @@ case class MappingType(structures: List[(String, ValueType)]) extends ValueType 
   }
 }
 
+case object TaskType extends ValueType
+
 object ValueType {
   def show(valueType: ValueType): String = valueType match {
     case AnyType => "*"

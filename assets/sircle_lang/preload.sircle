@@ -44,3 +44,5 @@ def config: Config =
   , "datasets" -> ["avazu", "criteo"]
   , "base_model" -> ["DAutoInt", "DAutoInt+"]
   }
+
+def task: Task = mkTask "main.py" config config

@@ -9,6 +9,10 @@ class Parser(val tokens: List[Token]) {
     (RightAssoc, Map(
       TokenType.DOLLAR -> OpType.DOLLAR
     )),
+    (RightAssoc, Map(
+      TokenType.GT_GT -> OpType.SEQ,
+      TokenType.BAR_BAR -> OpType.PAR
+    )),
     (LeftAssoc, Map(
       TokenType.AND -> OpType.AND,
       TokenType.OR -> OpType.OR
