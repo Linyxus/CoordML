@@ -211,10 +211,31 @@ class Evaluator {
         ValList(StringType, m.keys map ValString toList)
       }
     ),
+    "buildMapping" -> ValBuiltin(
+      List(ListType(TupleType(List(StringType, AnyType)))),
+      args => {
+        val fxs :: Nil = args
+        val items = fxs.asInstanceOf[ValList].items.map { x =>
+          val tuple = x.asInstanceOf[ValTuple]
+          val ms :: mv :: Nil = tuple.items
+          val s = ms.asInstanceOf[ValString].value
+          (s, mv)
+        }
+        ValMapping(Map.from(items))
+      }
+    ),
     "getGlobalBindings" -> ValBuiltin(
       List(UnitType),
       _ => {
         ValMapping(Map.from(valueBindings))
+      }
+    ),
+    "range" -> ValBuiltin(
+      List(IntType),
+      args => {
+        val fn :: Nil = args
+        val n = fn.asInstanceOf[ValInt].value
+        ValList(IntType, (0 until n).toList map ValInt)
       }
     )
   )
@@ -239,19 +260,28 @@ class Evaluator {
 
   var variableEnv: SymbolBinding.Env = Nil
 
-  def locateList[A, B](key: A, l: List[(A, B)], pred: B => Boolean = (x: Any) => true): B =
-    l find { x =>
-      x._1 == key && pred(x._2)
+  def locateValueWithType(name: String, local: List[(String, Value)], expectType: ValueType): Value =
+    (local :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
+      x._1 == name && (x._2.valueType <== expectType)
     } match {
       case Some(value) => value._2
-      case None => throw RuntimeError(s"Can not locate appropriate binding for name $key.")
+      case None => throw RuntimeError(s"Can not resolve symbol $name with type $expectType.")
     }
 
-  def locateValue(name: String, local: List[(String, Value)], pred: Value => Boolean = _ => true): Value =
-    locateList(name, local :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude, pred)
+  def locateValue(name: String, localVal: List[(String, Value)]): Value =
+    (localVal :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
+      x._1 == name
+    } match {
+      case Some(value) => value._2
+      case None => throw RuntimeError(s"Can not resolve symbol $name.")
+    }
 
-  def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType =
-    locateList(name, local :++ typePrelude)
+  def locateType(name: String, local: List[(String, ValueType)] = Nil): ValueType = {
+    (local :++ typePrelude).find { x => x._1 == name } match {
+      case Some(value) => value._2
+      case None => throw RuntimeError(s"Can not resolve type alias $name.")
+    }
+  }
 
   def evalTypeExpr(typeExpr: TypeExpr): ValueType = typeExpr match {
     case TypeExprIdentifier(name) => locateType(name)
@@ -328,6 +358,9 @@ class Evaluator {
     case ExprEffect(expr) => evalExpr(desugarExpr(expr), localVal)
   }
 
+  def mergeBindingEnv[A](left: BindingEnv[A], right: BindingEnv[A]): BindingEnv[A] =
+    Map.from(right :++ left).toList
+
   def evalExpr(expr: Expr, localVal: BindingEnv[Value]): Value =
     expr match {
       case ExprValue(value) => value
@@ -346,20 +379,17 @@ class Evaluator {
           x._1 -> evalExpr(x._2, localVal)
         }
       })
+
       case ExprLambda(argName, argType, body) =>
         val t = evalTypeExpr(argType)
-        ValLambda(argName, t, body, localVal)
+        val variableBinding = variableEnv.map { x => (x.name, x.value) }
+        ValLambda(argName, t, body, mergeBindingEnv(localVal, variableBinding))
+
       case ExprApp(func, arg) =>
         val x = evalExpr(arg, localVal)
-        val xT = x.valueType
-
-        def expectFunc(f: Value): Boolean = f match {
-          case ValLambda(_, argType, _, _) => argType <~~ x
-          case ValBuiltin(argSig, _, _) => argSig.head <~~ x
-        }
 
         (func match {
-          case ExprIdentifier(name) => locateValue(name, localVal, expectFunc)
+          case ExprIdentifier(name) => locateValueWithType(name, localVal, LambdaType(x.valueType))
           case _ => evalExpr(func, localVal)
         }) match {
           case ValBuiltin(argSig, func, resolved) =>
@@ -370,7 +400,7 @@ class Evaluator {
               ValBuiltin(argSig, func, resolvedP)
             }
           case ValLambda(argName, _, body, lexical) =>
-            val innerLocal = (argName -> x) :: (lexical :++ localVal)
+            val innerLocal = (argName -> x) :: mergeBindingEnv(lexical, localVal)
             evalExpr(body, innerLocal)
           case _ => throw RuntimeError("Error in type checker.")
         }
