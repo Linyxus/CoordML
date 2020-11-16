@@ -104,7 +104,10 @@ class Scanner(val source: String) {
       errorToken("Unexpected end of input while scanning a string.")
     else {
       advance
-      makeToken(STRING, Some(source.substring(start + 1, current - 1)))
+      val esc: CharSequence = "\\n"
+      val rep: CharSequence = "\n"
+      val s = source.substring(start + 1, current - 1).replace(esc, rep)
+      makeToken(STRING, Some(s))
     }
   }
 

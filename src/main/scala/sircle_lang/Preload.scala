@@ -48,6 +48,38 @@ object Preload {
       |
       |def filter = f: Any -> Any => xs: List => for x <- xs, f x do x
       |
+      |def println = x: Any => {
+      |  print x; print "\n"
+      |}
+      |
+      |def getFibonacci = n: Any => {
+      |  if (n == 0) then []
+      |  else if (n == 1) then [1]
+      |  else {
+      |    def ret = [1, 1];
+      |    def x = 1;
+      |    def y = 1;
+      |    for i <- range (n - 2) do {
+      |      def t = x + y;
+      |      ret = ret + [t];
+      |      x = y;
+      |      y = t
+      |    };
+      |    ret
+      |  }
+      |}
+      |
+      |def fiboMain = n: Int => {
+      |  println "fibonacci array";
+      |  def arr = getFibonacci n;
+      |  for i <- range n do {
+      |    print "fibo(";
+      |    print i;
+      |    print ") = ";
+      |    println (arr.i)
+      |  }
+      |}
+      |
       |type Config =
       |  { "seeds": List
       |  , "datasets": List
