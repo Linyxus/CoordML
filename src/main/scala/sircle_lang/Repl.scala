@@ -32,7 +32,7 @@ object Repl extends App {
     try {
       if (line.startsWith(":t")) {
         val value = evalStr(line.substring(2))
-        println(value.valueType)
+        println(ValueType show value.valueType)
       }
       else if (line.startsWith(":l")) {
         val path = line.substring(3)

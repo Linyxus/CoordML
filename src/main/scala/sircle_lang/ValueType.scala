@@ -3,15 +3,15 @@ package sircle_lang
 import scala.annotation.tailrec
 
 sealed trait ValueType {
-//  def ===(that: ValueType): Boolean = {
-//    (this, that) match {
-//      case (AnyType, _) | (_, AnyType) => true
-//      case (ListType(x), ListType(y)) => x === y
-//      case (LambdaType(x), LambdaType(y)) => x === y
-//      case _ => this == that
-//    }
-//  }
-//
+  //  def ===(that: ValueType): Boolean = {
+  //    (this, that) match {
+  //      case (AnyType, _) | (_, AnyType) => true
+  //      case (ListType(x), ListType(y)) => x === y
+  //      case (LambdaType(x), LambdaType(y)) => x === y
+  //      case _ => this == that
+  //    }
+  //  }
+  //
   def <==(that: ValueType): Boolean = {
     this == that
   }
@@ -60,7 +60,23 @@ case class MappingType(structures: List[(String, ValueType)]) extends ValueType 
         }
         case Nil => true
       }
+
       go(this.structures)
     case _ => false
+  }
+}
+
+object ValueType {
+  def show(valueType: ValueType): String = valueType match {
+    case AnyType => "*"
+    case IntType => "Int"
+    case DoubleType => "Double"
+    case StringType => "String"
+    case UnitType => "()"
+    case BooleanType => "Boolean"
+    case LambdaType(argType) => s"${show(argType)} -> *"
+    case ListType => s"[*]"
+    case TupleType(itemTypes) => s"( ${itemTypes map show mkString ", "} )"
+    case MappingType(structures) => s"{ ${structures map { x => s"${x._1} : ${show(x._2)}" } mkString ", "} }"
   }
 }

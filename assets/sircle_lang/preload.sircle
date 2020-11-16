@@ -33,7 +33,13 @@ def namedProd = map: {} => {
   map buildMapping namedPairs
 }
 
-def config: { "seeds": List, "datasets": List } =
+type Config =
+  { "seeds": List
+  , "datasets": List
+  , "base_model": List
+  }
+
+def config: Config =
   { "seeds" -> [1, 2, 3]
   , "datasets" -> ["avazu", "criteo"]
   , "base_model" -> ["DAutoInt", "DAutoInt+"]
