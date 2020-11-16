@@ -224,6 +224,25 @@ class Evaluator {
         ValList((0 until n).toList map ValInt)
       }
     ),
+    "mult" -> ValBuiltin(
+      List(ListType, ListType),
+      args => {
+        val fxs :: fys :: Nil = args
+        val xs = fxs.asInstanceOf[ValList]
+        val ys = fys.asInstanceOf[ValList]
+
+        def f(x: Value, ys: List[Value]): List[Value] = ys map { y =>
+          (x, y) match {
+            case (ValTuple(items1), ValTuple(items2)) => ValTuple(items1 :++ items2)
+            case (ValTuple(items1), v2) => ValTuple(items1 :+ v2)
+            case (v1, ValTuple(items2)) => ValTuple(v1 :: items2)
+            case (v1, v2) => ValTuple(v1 :: v2 :: Nil)
+          }
+        }
+
+        ValList(xs.items flatMap { x => f(x, ys.items) })
+      }
+    )
   )
 
   type BindingEnv[A] = List[(String, A)]
@@ -364,7 +383,7 @@ class Evaluator {
   }
 
   def mergeBindingEnv[A](left: BindingEnv[A], right: BindingEnv[A]): BindingEnv[A] =
-    Map.from(right :++ left).toList
+    Map.from((left :++ right).reverse).toList
 
   def evalExpr(expr: Expr, localVal: BindingEnv[Value]): Value =
     expr match {
@@ -426,7 +445,6 @@ class Evaluator {
         forEnv.map { x => evalExpr(desugarExpr(expr), x :++ localVal) } match {
           case Nil => ValList(Nil)
           case xs =>
-            val t = xs.head.valueType
             ValList(xs)
         }
 

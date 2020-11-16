@@ -1,3 +1,15 @@
-def map = f: Any -> Any => xs: [Any] => for x <- xs do f x
+def map = f: Any -> Any => xs: List => for x <- xs do f x
 
-def prod = xs: [Any] => ys: [Any] => for x <- xs, y <- ys do (x, y)
+def valuesOf = map: { } => for k <- keysOf map do map.k
+
+def foldl = op: Any -> Any => z: Any => xs: List => {
+  def ret = z;
+  for x <- xs do {
+    ret = op ret x
+  };
+  ret
+}
+
+def foldl1 = op: Any -> Any => xs: List => foldl op (head xs) (tail xs)
+
+def prod = xs: List => foldl1 (x: List => y: List => x * y) xs

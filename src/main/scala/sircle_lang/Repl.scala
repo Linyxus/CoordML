@@ -13,7 +13,7 @@ object Repl extends App {
     var ret: Value = ValUnit
     while (!parser.eof) {
       val binding = parser.parseBinding
-      println(Binding show binding)
+//      println(Binding show binding)
       ret = evaluator.executeBinding(binding)
     }
     ret
@@ -25,6 +25,8 @@ object Repl extends App {
   }
 
   println("Sircle REPL v0.0.0")
+  println("Loading preloaded source")
+  loadFile("./assets/sircle_lang/preload.sircle")
   while (true) {
     val line = readLine("> ")
     try {
