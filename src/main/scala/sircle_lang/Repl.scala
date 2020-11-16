@@ -27,7 +27,7 @@ object Repl extends App {
   println("Sircle REPL v0.0.0")
   println("Loading preloaded source")
   try {
-    loadFile("./assets/sircle_lang/preload.sircle")
+    evalStr(Preload.preloadSource)
   } catch {
     case e: ParseError => println("Parse error: " + e.errorMsg)
     case e: RuntimeError => println("Runtime error: " + e.errorMsg)
