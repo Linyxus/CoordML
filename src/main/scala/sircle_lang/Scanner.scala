@@ -43,7 +43,7 @@ class Scanner(val source: String) {
     } else '\u0000'
 
   def skipSpace(): Unit =
-    while (peek.isSpaceChar) advance
+    while (peek.isSpaceChar || peek == '\n' || peek == '\r' || peek == '\t') advance
 
   def scanNumber: Token = {
     def scanFrac: Token = {

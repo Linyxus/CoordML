@@ -254,7 +254,8 @@ class Evaluator {
   var valueBindings: BindingEnv[Value] = List(
     "sysInfo" -> ValMapping(Map(
       "os" -> ValString("darwin"),
-      "sircleVersion" -> ValString("v0.0.0")
+      "sircleVersion" -> ValString("v0.0.0"),
+      "workingDir" -> ValString(System.getProperty("user.dir"))
     ))
   )
 
