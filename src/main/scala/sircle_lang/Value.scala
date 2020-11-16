@@ -32,8 +32,8 @@ case class ValBuiltin(argSig: List[ValueType], func: List[Value] => Value, resol
   override val valueType: ValueType = LambdaType(argSig(resolved.length))
 }
 
-case class ValList(itemType: ValueType, items: List[Value]) extends Value {
-  override val valueType: ValueType = ListType(itemType)
+case class ValList(items: List[Value]) extends Value {
+  override val valueType: ValueType = ListType
 }
 
 case class ValTuple(items: List[Value]) extends Value {
@@ -52,7 +52,7 @@ object Value {
     case ValUnit => "()"
     case ValBoolean(v) => if (v) "True" else "False"
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
-    case ValList(itemType, items) => s"[${items map show mkString ", "}]:$itemType"
+    case ValList(items) => s"[${items map show mkString ", "}]"
     case ValTuple(items) => s"(${items map show mkString ", "})"
     case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", " } }"
   }

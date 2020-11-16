@@ -8,7 +8,7 @@ object ListDesugar extends TreeWalkDesugar {
 
   def transformList(expr: List[Expr]): Expr =
     expr match {
-      case Nil => ExprValue(ValList(AnyType, Nil))
+      case Nil => ExprValue(ValList(Nil))
       case x :: xs => ExprApp(ExprApp(ExprIdentifier("cons"), x), transformList(xs))
     }
 }

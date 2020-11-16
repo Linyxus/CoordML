@@ -19,16 +19,12 @@ class Evaluator {
       }
     ),
     "add" -> ValBuiltin(
-      List(ListType(AnyType), ListType(AnyType)),
+      List(ListType, ListType),
       args => {
         val x :: y :: Nil = args
         val lx = x.asInstanceOf[ValList]
         val ly = y.asInstanceOf[ValList]
-        if (lx.itemType === ly.itemType) {
-          ValList(lx.itemType, lx.items ++ ly.items)
-        } else {
-          throw RuntimeError(s"Can not concat two lists of different types: ${lx.itemType} and ${ly.itemType}.")
-        }
+        ValList(lx.items ++ ly.items)
       }
     ),
     "subtract" -> ValBuiltin(
@@ -71,7 +67,7 @@ class Evaluator {
       args => {
         val x :: y :: Nil = args
         (x, y) match {
-          case (ValList(_, Nil), ValList(_, Nil)) => ValBoolean(true)
+          case (ValList(Nil), ValList(Nil)) => ValBoolean(true)
           case _ =>
             ValBoolean(x == y)
         }
@@ -120,41 +116,29 @@ class Evaluator {
       }
     ),
     "cons" -> ValBuiltin(
-      List(AnyType, ListType(AnyType)),
+      List(AnyType, ListType),
       args => {
         val x :: xs :: Nil = args
-        val t = x.valueType
-        val xsT = xs.valueType.asInstanceOf[ListType]
-        if (t === xsT.itemType) {
-          ValList(t, x :: xs.asInstanceOf[ValList].items)
-        } else {
-          throw RuntimeError(s"Type mismatch in cons, $t and $xsT")
-        }
+        ValList(x :: xs.asInstanceOf[ValList].items)
       }
     ),
     "elemOf" -> ValBuiltin(
-      List(AnyType, ListType(AnyType)),
+      List(AnyType, ListType),
       args => {
         val x :: xs :: Nil = args
-        val t = x.valueType
         val l = xs.asInstanceOf[ValList]
-        val xsT = l.itemType
-        if (t === xsT) {
-          ValBoolean(l.items contains x)
-        } else {
-          throw RuntimeError(s"Type mismatch in elemOf, $t and $xsT")
-        }
+        ValBoolean(l.items contains x)
       }
     ),
     "isEmpty" -> ValBuiltin(
-      List(ListType(AnyType)),
+      List(ListType),
       args => {
         val x :: Nil = args
         ValBoolean(x.asInstanceOf[ValList].items.isEmpty)
       }
     ),
     "head" -> ValBuiltin(
-      List(ListType(AnyType)),
+      List(ListType),
       args => {
         val x :: Nil = args
         val l = x.asInstanceOf[ValList].items
@@ -165,18 +149,18 @@ class Evaluator {
       }
     ),
     "tail" -> ValBuiltin(
-      List(ListType(AnyType)),
+      List(ListType),
       args => {
         val x :: Nil = args
         val l = x.asInstanceOf[ValList].items
         if (l.isEmpty) {
           throw RuntimeError("Can not obtain the tail of an empty list.")
         } else
-          ValList(x.asInstanceOf[ValList].itemType, l.tail)
+          ValList(l.tail)
       }
     ),
     "length" -> ValBuiltin(
-      List(ListType(AnyType)),
+      List(ListType),
       args => {
         val x :: Nil = args
         val l = x.asInstanceOf[ValList].items
@@ -208,18 +192,20 @@ class Evaluator {
       args => {
         val fm :: Nil = args
         val m = fm.asInstanceOf[ValMapping].pairs
-        ValList(StringType, m.keys map ValString toList)
+        ValList(m.keys map ValString toList)
       }
     ),
     "buildMapping" -> ValBuiltin(
-      List(ListType(TupleType(List(StringType, AnyType)))),
+      List(ListType),
       args => {
         val fxs :: Nil = args
         val items = fxs.asInstanceOf[ValList].items.map { x =>
-          val tuple = x.asInstanceOf[ValTuple]
-          val ms :: mv :: Nil = tuple.items
-          val s = ms.asInstanceOf[ValString].value
-          (s, mv)
+          if (TupleType(List(StringType, AnyType)) <== x.valueType) {
+            val tuple = x.asInstanceOf[ValTuple]
+            val ms :: mv :: Nil = tuple.items
+            val s = ms.asInstanceOf[ValString].value
+            (s, mv)
+          } else throw RuntimeError(s"Unexpect item type ${x.valueType} when evaluating buildMapping.")
         }
         ValMapping(Map.from(items))
       }
@@ -235,9 +221,9 @@ class Evaluator {
       args => {
         val fn :: Nil = args
         val n = fn.asInstanceOf[ValInt].value
-        ValList(IntType, (0 until n).toList map ValInt)
+        ValList((0 until n).toList map ValInt)
       }
-    )
+    ),
   )
 
   type BindingEnv[A] = List[(String, A)]
@@ -249,6 +235,7 @@ class Evaluator {
     "String" -> StringType,
     "Unit" -> UnitType,
     "Boolean" -> BooleanType,
+    "List" -> ListType,
   )
 
   var valueBindings: BindingEnv[Value] = List(
@@ -288,7 +275,6 @@ class Evaluator {
 
   def evalTypeExpr(typeExpr: TypeExpr): ValueType = typeExpr match {
     case TypeExprIdentifier(name) => locateType(name)
-    case TypeExprList(itemType) => ListType(evalTypeExpr(itemType))
     case TypeExprArrow(left, _) => LambdaType(evalTypeExpr(left))
     case TypeExprMapping(pairs) => MappingType(
       Map.from(pairs).toList map { x =>
@@ -319,7 +305,7 @@ class Evaluator {
       val t = evalTypeExpr(valType)
 
       (valuePrelude :++ Nil) find { x =>
-        x._1 == name && x._2.valueType === t
+        x._1 == name && (x._2.valueType <== t)
       } match {
         case Some(_) => throw RuntimeError(s"Can not override built-in symbol name $name.")
         case None =>
@@ -354,7 +340,7 @@ class Evaluator {
     case ValueBindEffect(name, valType, expr) =>
       val t = evalTypeExpr(valType)
 
-      valuePrelude find { x => x._1 == name && x._2.valueType === t } match {
+      valuePrelude find { x => x._1 == name && (x._2.valueType <== t) } match {
         case Some(_) => throw RuntimeError(s"Cannot override built-in symbol name $name.")
         case None =>
           val v = getValue(expr, t, localVal)
@@ -367,7 +353,7 @@ class Evaluator {
 
       variableEnv.find(_.name == name) match {
         case Some(binding) =>
-          if (binding.value.valueType === v.valueType) {
+          if (binding.value.valueType <== v.valueType) {
             binding.value = v
             v
           } else throw RuntimeError(s"Type mismatch: assigning ${v.valueType} to ${binding.value.valueType} symbol.")
@@ -438,13 +424,10 @@ class Evaluator {
       case ExprFor(combinators, expr) =>
         val forEnv = generateForEnvs(combinators, localVal)
         forEnv.map { x => evalExpr(desugarExpr(expr), x :++ localVal) } match {
-          case Nil => ValList(AnyType, Nil)
+          case Nil => ValList(Nil)
           case xs =>
             val t = xs.head.valueType
-            xs.foreach { x =>
-              if (!(x.valueType === t)) throw RuntimeError(s"Resulting value types do not match in for expression.")
-            }
-            ValList(t, xs)
+            ValList(xs)
         }
 
       case _ => throw RuntimeError(s"Unimplemented expr ${Expr show expr}.")
@@ -471,7 +454,7 @@ class Evaluator {
       case Some(_) => throw RuntimeError(s"Duplicated symbol $name in for expansion.")
       case None =>
         val v = evalExpr(desugarExpr(expr), env :++ localVal)
-        if (v.valueType === ListType(AnyType))
+        if (ListType <== v.valueType)
           v.asInstanceOf[ValList].items.map { x => (name -> x) :: env }
         else
           throw RuntimeError(s"Expecting lists but found ${v.valueType} in for expansion.")

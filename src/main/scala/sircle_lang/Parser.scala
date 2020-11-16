@@ -163,7 +163,7 @@ class Parser(val tokens: List[Token]) {
         }
       case TokenType.LEFT_BRACKET =>
         parseList match {
-          case Nil => ExprValue(ValList(AnyType, Nil))
+          case Nil => ExprValue(ValList(Nil))
           case x => ExprList(x)
         }
       case TokenType.LEFT_BRACE =>
@@ -302,12 +302,6 @@ class Parser(val tokens: List[Token]) {
         }
       case TokenType.LEFT_BRACE =>
         TypeExprMapping(parseTypeMappingList)
-      case TokenType.LEFT_BRACKET =>
-        val expr = parseTypeExpr
-        if (matchAhead(TokenType.RIGHT_BRACKET))
-          TypeExprList(expr)
-        else
-          throw ParseError(s"Unmatched list bracket when parsing type expressions.")
       case _ =>
         throw ParseError(s"Invalid type expr at token $peek")
     }
