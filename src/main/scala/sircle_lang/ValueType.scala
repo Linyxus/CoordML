@@ -11,12 +11,14 @@ sealed trait ValueType {
       case _ => this == that
     }
   }
-  def <~~(value: Value): Boolean =
-    value.valueType == this
+
+  def <==(that: ValueType): Boolean = {
+    this == that
+  }
 }
 
 case object AnyType extends ValueType {
-  override def <~~(value: Value): Boolean = true
+  override def <==(that: ValueType): Boolean = true
 }
 
 case object IntType extends ValueType
@@ -29,24 +31,36 @@ case object UnitType extends ValueType
 
 case object BooleanType extends ValueType
 
-case class LambdaType(argType: ValueType) extends ValueType
-
-case class ListType(itemType: ValueType) extends ValueType {
-  override def <~~(value: Value): Boolean = if (itemType == AnyType) value.valueType match {
-    case ListType(_) => true
+case class LambdaType(argType: ValueType) extends ValueType {
+  override def <==(that: ValueType): Boolean = that match {
+    case LambdaType(thatArgType) => argType <== thatArgType
     case _ => false
-  } else super.<~~(value)
+  }
 }
 
-case class TupleType(itemTypes: List[ValueType]) extends ValueType
+case class ListType(itemType: ValueType) extends ValueType {
+  override def <==(t: ValueType): Boolean = t match {
+    case ListType(that) => itemType <== that
+    case _ => false
+  }
+}
+
+case class TupleType(itemTypes: List[ValueType]) extends ValueType {
+  override def <==(that: ValueType): Boolean = that match {
+    case TupleType(thatItemTypes) =>
+      itemTypes.length == thatItemTypes.length &&
+        itemTypes.zip(thatItemTypes).forall { x => x._1 <== x._2 }
+    case _ => false
+  }
+}
 
 case class MappingType(structures: List[(String, ValueType)]) extends ValueType {
-  override def <~~(value: Value): Boolean = value.valueType match {
-    case MappingType(that) =>
+  override def <==(that: ValueType): Boolean = that match {
+    case MappingType(thatPairs) =>
       @tailrec
       def go(xs: List[(String, ValueType)]): Boolean = xs match {
-        case x :: rem => that find { p => p._1 == x._1 } match {
-          case Some(t) => t._2 == x._2 && go(rem)
+        case x :: rem => thatPairs find { p => p._1 == x._1 } match {
+          case Some(t) => (t._2 <== x._2) && go(rem)
           case None => false
         }
         case Nil => true
