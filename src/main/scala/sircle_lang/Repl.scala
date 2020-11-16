@@ -13,7 +13,7 @@ object Repl extends App {
     var ret: Value = ValUnit
     while (!parser.eof) {
       val binding = parser.parseBinding
-//      println(Binding show binding)
+      //      println(Binding show binding)
       ret = evaluator.executeBinding(binding)
     }
     ret
@@ -23,6 +23,12 @@ object Repl extends App {
     val source = Source.fromFile(path).getLines mkString "\n"
     evalStr(source)
   }
+
+  val commandList: Map[String, String => String] = Map(
+    "t" -> { x: String => ValueType show evalStr(x).valueType },
+    "l" -> { x: String => Value show loadFile(x) },
+    "q" -> { _ => sys.exit(0) }
+  )
 
   println("Sircle REPL v0.0.0")
   println("Loading preloaded source")
@@ -35,13 +41,13 @@ object Repl extends App {
   while (true) {
     val line = readLine("> ")
     try {
-      if (line.startsWith(":t")) {
-        val value = evalStr(line.substring(2))
-        println(ValueType show value.valueType)
-      }
-      else if (line.startsWith(":l")) {
-        val path = line.substring(3)
-        println(Value show loadFile(path))
+      if (line.startsWith(":")) {
+        val arg = line.substring(2).trim
+        val cmd = line.substring(1, 2)
+        commandList get cmd match {
+          case Some(func) => println(func(arg))
+          case None => println(s"Undefined command $cmd.")
+        }
       } else {
         val value = evalStr(line)
         println(Value show value)
