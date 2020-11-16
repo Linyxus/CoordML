@@ -317,6 +317,22 @@ class Evaluator {
           }
         )
       }
+    ),
+    "print" -> ValBuiltin(
+      List(StringType),
+      args => {
+        val x :: Nil = args
+        print(x.asInstanceOf[ValString].value)
+        ValUnit
+      }
+    ),
+    "print" -> ValBuiltin(
+      List(AnyType),
+      args => {
+        val x :: Nil = args
+        print(Value show x)
+        ValUnit
+      }
     )
   )
 
