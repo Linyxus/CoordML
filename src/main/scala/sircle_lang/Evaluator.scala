@@ -294,6 +294,7 @@ class Evaluator {
       Map.from(pairs).toList map { x =>
         (x._1, evalTypeExpr(x._2))
       })
+    case TypeExprTuple(items) => TupleType(items map evalTypeExpr)
     case _ => throw RuntimeError(s"Unimplemented type expression ${TypeExpr show typeExpr}.")
   }
 
@@ -346,7 +347,7 @@ class Evaluator {
 
   def getValue(expr: Expr, expect: ValueType, localVal: List[(String, Value)]): Value = {
     val v = evalExpr(desugarExpr(expr), localVal)
-    if (expect === v.valueType) v else throw RuntimeError(s"Type mismatch: $expect and ${v.valueType}.")
+    if (expect <== v.valueType) v else throw RuntimeError(s"Type mismatch: $expect and ${v.valueType}.")
   }
 
   def executeEffect(effect: Effect, localVal: List[(String, Value)]): Value = effect match {
