@@ -297,8 +297,11 @@ class Parser(val tokens: List[Token]) {
         val expr = parseTypeExpr
         if (matchAhead(TokenType.RIGHT_PAREN))
           expr
-        else
+        else {
           throw ParseError(s"Unmatched paren when parsing type expressions.")
+        }
+      case TokenType.LEFT_BRACE =>
+        TypeExprMapping(parseTypeMappingList)
       case TokenType.LEFT_BRACKET =>
         val expr = parseTypeExpr
         if (matchAhead(TokenType.RIGHT_BRACKET))
@@ -309,6 +312,20 @@ class Parser(val tokens: List[Token]) {
         throw ParseError(s"Invalid type expr at token $peek")
     }
   }
+
+  def parseTypeMappingList: List[(String, TypeExpr)] =
+    if (matchAhead(TokenType.RIGHT_BRACE)) Nil
+    else expect(TokenType.STRING, { token =>
+      val name = token.lexeme.toString
+      expect(TokenType.COLON, { _ =>
+        val pair: (String, TypeExpr) = (name, parseTypeExpr)
+        if (matchAhead(TokenType.COMMA))
+          pair :: parseTypeMappingList
+        else if (matchAhead(TokenType.RIGHT_BRACE))
+          pair :: Nil
+        else throw ParseError(s"Expecting COMMA or RIGHT_BRACE when parsing mapping type, but see ${peek.tokenType}.")
+      })
+    })
 
   def parseEffect: Effect =
     if (matchAhead(TokenType.KW_DEF))

@@ -13,7 +13,7 @@ object Repl extends App {
     var ret: Value = ValUnit
     while (!parser.eof) {
       val binding = parser.parseBinding
-      //    println(Binding show binding)
+      println(Binding show binding)
       ret = evaluator.executeBinding(binding)
     }
     ret

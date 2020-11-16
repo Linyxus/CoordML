@@ -290,6 +290,11 @@ class Evaluator {
     case TypeExprIdentifier(name) => locateType(name)
     case TypeExprList(itemType) => ListType(evalTypeExpr(itemType))
     case TypeExprArrow(left, _) => LambdaType(evalTypeExpr(left))
+    case TypeExprMapping(pairs) => MappingType(
+      Map.from(pairs).toList map { x =>
+        (x._1, evalTypeExpr(x._2))
+      })
+    case _ => throw RuntimeError(s"Unimplemented type expression ${TypeExpr show typeExpr}.")
   }
 
   def desugarExpr(expr: Expr): Expr = {
