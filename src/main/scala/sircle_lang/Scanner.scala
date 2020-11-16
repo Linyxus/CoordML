@@ -164,7 +164,7 @@ class Scanner(val source: String) {
           case "False" => makeToken(BOOLEAN, Some(false))
           case _ => makeToken(IDENTIFIER)
         }
-      case '"' => return scanString
+      case '"' => scanString
       case _ => errorToken(s"Unexpected character.")
     }
   }

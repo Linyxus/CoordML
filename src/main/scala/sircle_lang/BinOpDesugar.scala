@@ -4,19 +4,19 @@ import OpType._
 
 object BinOpDesugar extends TreeWalkDesugar {
   val opTable: Map[OpType, String] = Map(
-    AND -> "andF",
-    OR -> "orF",
-    PLUS -> "add",
-    MINUS -> "subtract",
-    MUL -> "mult",
-    DIV -> "div",
-    IN -> "elemOf",
-    LT -> "lt",
-    LE -> "le",
-    GT -> "gt",
-    GE -> "ge",
-    EQ -> "eq",
-    GET -> "get",
+    AND -> "__and",
+    OR -> "__or",
+    PLUS -> "__add",
+    MINUS -> "__subtract",
+    MUL -> "__mult",
+    DIV -> "__div",
+    IN -> "__in",
+    LT -> "__lt",
+    LE -> "__le",
+    GT -> "__gt",
+    GE -> "__ge",
+    EQ -> "__eq",
+    GET -> "__get",
   )
 
   override def desugar(expr: Expr): Expr = expr match {

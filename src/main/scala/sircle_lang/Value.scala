@@ -55,5 +55,6 @@ object Value {
     case ValList(items) => s"[${items map show mkString ", "}]"
     case ValTuple(items) => s"(${items map show mkString ", "})"
     case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", " } }"
+    case ValBuiltin(argSig, func, _) => s"<builtin func with signature ${ argSig.map(_.toString) mkString " -> " }>"
   }
 }

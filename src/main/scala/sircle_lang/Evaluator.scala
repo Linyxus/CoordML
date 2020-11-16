@@ -4,21 +4,21 @@ import scala.collection.immutable.List
 
 class Evaluator {
   val valuePrelude: List[(String, Value)] = List(
-    "add" -> ValBuiltin(
+    "__add" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value + y.asInstanceOf[ValInt].value)
       }
     ),
-    "add" -> ValBuiltin(
+    "__add" -> ValBuiltin(
       List(StringType, StringType),
       args => {
         val x :: y :: Nil = args
         ValString(x.asInstanceOf[ValString].value + y.asInstanceOf[ValString].value)
       }
     ),
-    "add" -> ValBuiltin(
+    "__add" -> ValBuiltin(
       List(ListType, ListType),
       args => {
         val x :: y :: Nil = args
@@ -27,42 +27,42 @@ class Evaluator {
         ValList(lx.items ++ ly.items)
       }
     ),
-    "subtract" -> ValBuiltin(
+    "__subtract" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value - y.asInstanceOf[ValInt].value)
       }
     ),
-    "mult" -> ValBuiltin(
+    "__mult" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value * y.asInstanceOf[ValInt].value)
       }
     ),
-    "div" -> ValBuiltin(
+    "__div" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value / y.asInstanceOf[ValInt].value)
       }
     ),
-    "andF" -> ValBuiltin(
+    "__and" -> ValBuiltin(
       List(BooleanType, BooleanType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValBoolean].value && y.asInstanceOf[ValBoolean].value)
       }
     ),
-    "orF" -> ValBuiltin(
+    "__or" -> ValBuiltin(
       List(BooleanType, BooleanType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValBoolean].value || y.asInstanceOf[ValBoolean].value)
       }
     ),
-    "eq" -> ValBuiltin(
+    "__eq" -> ValBuiltin(
       List(AnyType, AnyType),
       args => {
         val x :: y :: Nil = args
@@ -73,42 +73,42 @@ class Evaluator {
         }
       }
     ),
-    "lt" -> ValBuiltin(
+    "__lt" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValInt].value < y.asInstanceOf[ValInt].value)
       }
     ),
-    "le" -> ValBuiltin(
+    "__le" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValInt].value <= y.asInstanceOf[ValInt].value)
       }
     ),
-    "gt" -> ValBuiltin(
+    "__gt" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValInt].value > y.asInstanceOf[ValInt].value)
       }
     ),
-    "ge" -> ValBuiltin(
+    "__ge" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValBoolean(x.asInstanceOf[ValInt].value >= y.asInstanceOf[ValInt].value)
       }
     ),
-    "notF" -> ValBuiltin(
+    "__not" -> ValBuiltin(
       List(BooleanType),
       args => {
         val x :: Nil = args
         ValBoolean(!x.asInstanceOf[ValBoolean].value)
       }
     ),
-    "negF" -> ValBuiltin(
+    "__neg" -> ValBuiltin(
       List(IntType),
       args => {
         val x :: Nil = args
@@ -122,7 +122,7 @@ class Evaluator {
         ValList(x :: xs.asInstanceOf[ValList].items)
       }
     ),
-    "elemOf" -> ValBuiltin(
+    "__in" -> ValBuiltin(
       List(AnyType, ListType),
       args => {
         val x :: xs :: Nil = args
@@ -175,7 +175,7 @@ class Evaluator {
         ValString(l.toString)
       }
     ),
-    "get" -> ValBuiltin(
+    "__get" -> ValBuiltin(
       List(MappingType(Nil), StringType),
       args => {
         val fm :: fi :: Nil = args
@@ -184,6 +184,43 @@ class Evaluator {
         m.pairs get i.value match {
           case Some(value) => value
           case None => throw RuntimeError(s"Can not get field ${i.value} from mapping ${Value show fm}.")
+        }
+      }
+    ),
+    "__get" -> ValBuiltin(
+      List(ListType, IntType),
+      args => {
+        val fm :: fi :: Nil = args
+        val m = fm.asInstanceOf[ValList]
+        val i = fi.asInstanceOf[ValInt]
+        if (m.items.length <= i.value) {
+          throw RuntimeError(s"Index ${i.value} out of range.")
+        } else m.items(i.value)
+      }
+    ),
+    "__get" -> ValBuiltin(
+      List(AnyType, IntType),
+      args => {
+        val fm :: fi :: Nil = args
+        val i = fi.asInstanceOf[ValInt]
+        fm.valueType match {
+          case TupleType(_) =>
+            val m = fm.asInstanceOf[ValTuple]
+            if (i.value >= m.items.length) throw RuntimeError(s"Index ${i.value} out of range.")
+            else m.items(i.value)
+          case _ => throw RuntimeError(s"Unsupported type ${fm.valueType} for dot get operator.")
+        }
+      }
+    ),
+    "toList" -> ValBuiltin(
+      List(AnyType),
+      args => {
+        val fm :: Nil = args
+        fm.valueType match {
+          case TupleType(_) =>
+            val m = fm.asInstanceOf[ValTuple]
+            ValList(m.items)
+          case _ => throw RuntimeError(s"Unsupported type ${fm.valueType} for toList.")
         }
       }
     ),
@@ -224,7 +261,7 @@ class Evaluator {
         ValList((0 until n).toList map ValInt)
       }
     ),
-    "mult" -> ValBuiltin(
+    "__mult" -> ValBuiltin(
       List(ListType, ListType),
       args => {
         val fxs :: fys :: Nil = args

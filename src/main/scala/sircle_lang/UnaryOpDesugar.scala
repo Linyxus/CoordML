@@ -4,8 +4,8 @@ import PrefixType._
 
 object UnaryOpDesugar extends TreeWalkDesugar {
   val opTable: Map[PrefixType, String] = Map(
-    NOT -> "notF",
-    NEG -> "negF"
+    NOT -> "__not",
+    NEG -> "__neg"
   )
 
   override def desugar(expr: Expr): Expr = expr match {
