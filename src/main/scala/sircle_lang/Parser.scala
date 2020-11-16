@@ -391,3 +391,12 @@ class Parser(val tokens: List[Token]) {
       })
     })
 }
+
+object Parser {
+  def parse(tokens: List[Token]): List[Effect] = {
+    val parser = new Parser(tokens)
+    var ret: List[Effect] = Nil
+    while (!parser.eof) ret = ret :+ parser.parseEffect
+    ret
+  }
+}
