@@ -12,7 +12,7 @@ object CentralApp {
   private def startHttpServer(routes: Route)(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
 
-    val futureBinding = Http().newServerAt("localhost", 9090).bind(routes)
+    val futureBinding = Http().newServerAt("localhost", 8888).bind(routes)
     futureBinding.onComplete {
       case Success(binding) =>
         val address = binding.localAddress
@@ -28,8 +28,12 @@ object CentralApp {
       val systemInfoActor = context.spawn(SystemInfo(), "SystemInfoActor")
       context.watch(systemInfoActor)
 
+      val functionalActor = context.spawn(Functional(), "FunctionalActor")
+      context.watch(functionalActor)
+
       val routes = concat(
-        new SysInfoRoutes(systemInfoActor)(context.system).sysInfoRoutes,
+//        new SysInfoRoutes(systemInfoActor)(context.system).sysInfoRoutes,
+        new FunctionalRoutes(functionalActor)(context.system).functionalRoutes,
         PortalRoutes.portalRoutes
       )
       startHttpServer(routes)(context.system)

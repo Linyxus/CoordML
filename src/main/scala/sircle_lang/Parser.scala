@@ -393,12 +393,12 @@ class Parser(val tokens: List[Token]) {
 }
 
 object Parser {
-  def parse(tokens: List[Token]): List[Effect] = {
+  def parse(tokens: List[Token]): List[Binding] = {
     val parser = new Parser(tokens)
-    var ret: List[Effect] = Nil
-    while (!parser.eof) ret = ret :+ parser.parseEffect
+    var ret: List[Binding] = Nil
+    while (!parser.eof) ret = ret :+ parser.parseBinding
     ret
   }
 
-  def parseSource(source: String): List[Effect] = parse(Scanner.scanSource(source))
+  def parseSource(source: String): List[Binding] = parse(Scanner.scanSource(source))
 }

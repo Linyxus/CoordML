@@ -3,10 +3,12 @@ package sircle_lang
 class Runtime {
   val evaluator = new Evaluator
 
-  def loadSource(source: String): Unit = {
-    val effects = Parser.parseSource(source)
-    for (eff <- effects)
-      evaluator.executeEffect(eff, Nil)
+  def loadSource(source: String): Value = {
+    val bindings = Parser.parseSource(source)
+    var ret: Value = ValUnit
+    for (b <- bindings)
+      ret = evaluator.executeBinding(b, Nil)
+    ret
   }
 
   def loadFile(sourcePath: String): Unit = {
@@ -15,6 +17,8 @@ class Runtime {
   }
 
   def evalExpr(expr: Expr): Value = evaluator.evalExpr(evaluator.desugarExpr(expr), Nil)
+
+  loadSource(Preload.preloadSource)
 }
 
 object Runtime {
