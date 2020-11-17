@@ -25,10 +25,13 @@ object CentralApp {
 
   def main(args: Array[String]): Unit = {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
-//      val userRegistryActor = context.spawn(UserRegistry(), "UserRegistryActor")
-//      context.watch(userRegistryActor)
+      val systemInfoActor = context.spawn(SystemInfo(), "SystemInfoActor")
+      context.watch(systemInfoActor)
 
-      val routes = StaticRoutes.staticRoutes
+      val routes = concat(
+        new SysInfoRoutes(systemInfoActor)(context.system).sysInfoRoutes,
+        PortalRoutes.portalRoutes
+      )
       startHttpServer(routes)(context.system)
 
       Behaviors.empty
