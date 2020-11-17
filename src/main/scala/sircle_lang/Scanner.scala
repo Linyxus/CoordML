@@ -10,7 +10,7 @@ class Scanner(val source: String) {
   var startLinePos: Int = 0
 
   def makeToken(tokenType: TokenType, value: Option[Any] = None): Token =
-    Token(tokenType, line, startLinePos, source.substring(start, current), value orNull)
+    Token(tokenType, line, startLinePos, source.substring(start, current), value.orNull)
 
   def errorToken(errorMsg: String): Token =
     Token(ERROR, line, linePos, errorMsg, null)

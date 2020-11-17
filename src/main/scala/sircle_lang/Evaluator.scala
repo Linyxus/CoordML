@@ -229,7 +229,7 @@ class Evaluator {
       args => {
         val fm :: Nil = args
         val m = fm.asInstanceOf[ValMapping].pairs
-        ValList(m.keys map ValString toList)
+        ValList((m.keys map ValString).toList)
       }
     ),
     "buildMapping" -> ValBuiltin(
