@@ -1,5 +1,7 @@
 package sircle_lang
 
+import spray.json._
+
 sealed trait Value {
   val valueType: ValueType
 }
@@ -58,8 +60,36 @@ object Value {
     case ValLambda(argName, argType, expr, _) => s"lambda: $argName: $argType => ${Expr.show(expr)}"
     case ValList(items) => s"[${items map show mkString ", "}]"
     case ValTuple(items) => s"(${items map show mkString ", "})"
-    case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", " } }"
-    case ValBuiltin(argSig, _, _) => s"<builtin func with signature ${ argSig.map(_.toString) mkString " -> " }>"
+    case ValMapping(pairs) => s"{ ${pairs map { x => s"${x._1} -> ${Value show x._2}" } mkString ", "} }"
+    case ValBuiltin(argSig, _, _) => s"<builtin func with signature ${argSig.map(_.toString) mkString " -> "}>"
     case ValTask(task) => Task show task
   }
+
+  def fromJson(jsValue: JsValue): Value = jsValue match {
+    case JsObject(fields) => ValMapping(fields.map { x =>
+      x._1 -> fromJson(x._2)
+    })
+    case JsArray(elements) => ValList(elements.toList map fromJson)
+    case JsString(value) => ValString(value)
+    case JsNumber(value) =>
+      if (value.isValidInt) ValInt(value.intValue)
+      else ValDouble(value.doubleValue)
+    case boolean: JsBoolean => ValBoolean(boolean.value)
+    case JsNull => throw new NotImplementedError(s"Converting from json null to Value is not supported.")
+  }
+
+  def toJson(value: Value): JsValue = value match {
+    case ValInt(value) => JsNumber(value)
+    case ValDouble(value) => JsNumber(value)
+    case ValString(value) => JsString(value)
+    case ValBoolean(value) => JsBoolean(value)
+    case ValList(items) => JsArray((items map toJson).toVector)
+    case ValTuple(items) => JsArray((items map toJson).toVector)
+    case ValMapping(pairs) => JsObject(pairs.map { x =>
+      x._1 -> toJson(x._2)
+    })
+    case ValTask(task) => Task toJson task
+    case v => throw new NotImplementedError(s"Converting from Value ${Value show v} to json is not supported.")
+  }
 }
+
