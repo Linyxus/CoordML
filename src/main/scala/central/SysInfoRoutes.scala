@@ -18,8 +18,8 @@ class SysInfoRoutes(sysInfo: ActorRef[SystemInfo.Command])(implicit val system: 
 
   private implicit val timeout: Timeout = Timeout.create(system.settings.config.getDuration("coordml-central.routes.ask-timeout"))
 
-  def getSysInfo: Future[GetInfoResponse] =
-    sysInfo ? GetInfo
+  def getSysInfo: Future[GetSysInfoResponse] =
+    sysInfo ? GetSysInfo
 
   val sysInfoRoutes: Route =
     pathPrefix("api") {
