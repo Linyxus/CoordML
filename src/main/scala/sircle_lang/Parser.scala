@@ -399,4 +399,6 @@ object Parser {
     while (!parser.eof) ret = ret :+ parser.parseEffect
     ret
   }
+
+  def parseSource(source: String): List[Effect] = parse(Scanner.scanSource(source))
 }

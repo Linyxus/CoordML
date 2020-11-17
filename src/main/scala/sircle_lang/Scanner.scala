@@ -183,4 +183,12 @@ object Scanner {
       case _ => token :: extractTokens(scanner)
     }
   }
+
+  def scanSource(source: String): List[Token] = {
+    val tokens = getAllTokens(source)
+    tokens filter { x => x.tokenType == ERROR } match {
+      case Nil => tokens
+      case xs => throw ScanError(xs)
+    }
+  }
 }
