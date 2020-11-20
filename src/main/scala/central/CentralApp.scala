@@ -31,9 +31,12 @@ object CentralApp {
       val functionalActor = context.spawn(Functional(), "FunctionalActor")
       context.watch(functionalActor)
 
+      val statefulActor = context.spawn(Stateful(), "StatefulActor")
+      context.watch(statefulActor)
+
       val routes = concat(
 //        new SysInfoRoutes(systemInfoActor)(context.system).sysInfoRoutes,
-        new FunctionalRoutes(functionalActor)(context.system).functionalRoutes,
+        new FunctionalRoutes(functionalActor, statefulActor)(context.system).functionalRoutes,
         PortalRoutes.portalRoutes
       )
       startHttpServer(routes)(context.system)

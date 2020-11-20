@@ -12,7 +12,7 @@ import akka.util.Timeout
 import central.Functional._
 import spray.json._
 
-class FunctionalRoutes(functional: ActorRef[Functional.Command])(implicit val system: ActorSystem[_]) {
+class FunctionalRoutes(functional: ActorRef[Functional.Command], stateful: ActorRef[Stateful.Command])(implicit val system: ActorSystem[_]) {
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
   import JsonFormats._
@@ -31,10 +31,30 @@ class FunctionalRoutes(functional: ActorRef[Functional.Command])(implicit val sy
   def sessEvalSircleExpr(source: String, sessId: Int): Future[EvalSircleExprResponse] =
     functional.ask(SessEvalSircleExpr(source, sessId, _))
 
+  def statefulAdd: Future[Int] =
+    stateful.ask(Stateful.Add)
+
+  def statefulShow: Future[Int] =
+    stateful.ask(Stateful.Show)
+
 
   val functionalRoutes: Route =
     pathPrefix("api") {
       concat(
+        pathPrefix("stateful") {
+          concat(
+            pathPrefix("add") {
+              onSuccess(statefulAdd) { resp =>
+                complete(s"x = $resp")
+              }
+            },
+            pathPrefix("show") {
+              onSuccess(statefulShow) { resp =>
+                complete(s"x = $resp")
+              }
+            }
+          )
+        },
         pathPrefix("sircle") {
           concat(
             pathPrefix("eval") {
