@@ -37,7 +37,7 @@ object CentralApp {
       val workerManagerActor = context.spawn(WorkerManager(), "WorkerManagerActor")
       context.watch(workerManagerActor)
 
-      val expManagerActor = context.spawn(ExpManager(), "ExpManagerActor")
+      val expManagerActor = context.spawn(ExpManager(workerManagerActor), "ExpManagerActor")
       context.watch(expManagerActor)
 
       val routes = concat(

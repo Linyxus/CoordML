@@ -12,7 +12,7 @@ class Runtime {
   }
 
   def loadFile(sourcePath: String): Unit = {
-    val source = io.Source.fromFile(sourcePath) mkString "\n"
+    val source = io.Source.fromFile(sourcePath).getLines mkString "\n"
     loadSource(source)
   }
 

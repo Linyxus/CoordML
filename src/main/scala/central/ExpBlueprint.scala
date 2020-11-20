@@ -18,7 +18,7 @@ object ExpBlueprint {
       val arg = sircle_lang.Value.fromJson(request.config)
       val task = resolver(List(arg)) match {
         case ValTask(task) => task
-        case _ => throw RuntimeError(s"Returned value type of resolve is not task.")
+        case v => throw RuntimeError(s"Returned value type of resolve is ${v.valueType}, expecting task.")
       }
       Right(ExpBlueprint(request.title, request.author, request.envPath, request.resultParse, request.resultView, task))
     } catch {
