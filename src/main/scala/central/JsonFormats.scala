@@ -21,4 +21,8 @@ object JsonFormats {
   implicit val workersListFormat: RootJsonFormat[WorkerManager.WorkersList] =
     jsonFormat1(WorkerManager.WorkersList)
 
+  implicit val resultViewFormat: RootJsonFormat[ResultView] = jsonFormat2(ResultView)
+  implicit val createExpRequestFormat: RootJsonFormat[CreateExpRequest] = jsonFormat7(CreateExpRequest)
+  implicit val expCreatedFormat: RootJsonFormat[ExpManager.ExpCreated] = jsonFormat1(ExpManager.ExpCreated)
+
 }
