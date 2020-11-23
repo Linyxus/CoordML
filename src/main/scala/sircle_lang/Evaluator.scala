@@ -27,6 +27,15 @@ class Evaluator {
         ValList(lx.items ++ ly.items)
       }
     ),
+    "__add" -> ValBuiltin(
+      List(MappingType(Nil), MappingType(Nil)),
+      args => {
+        val x :: y :: Nil = args
+        val lx = x.asInstanceOf[ValMapping]
+        val ly = y.asInstanceOf[ValMapping]
+        ValMapping(lx.pairs ++ ly.pairs.toList)
+      }
+    ),
     "__subtract" -> ValBuiltin(
       List(IntType, IntType),
       args => {
