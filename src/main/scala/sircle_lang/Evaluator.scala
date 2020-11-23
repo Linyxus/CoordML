@@ -12,6 +12,13 @@ class Evaluator {
       }
     ),
     "__add" -> ValBuiltin(
+      List(DoubleType, DoubleType),
+      args => {
+        val x :: y :: Nil = args
+        ValDouble(x.asInstanceOf[ValDouble].value + y.asInstanceOf[ValDouble].value)
+      }
+    ),
+    "__add" -> ValBuiltin(
       List(StringType, StringType),
       args => {
         val x :: y :: Nil = args
@@ -43,6 +50,13 @@ class Evaluator {
         ValInt(x.asInstanceOf[ValInt].value - y.asInstanceOf[ValInt].value)
       }
     ),
+    "__subtract" -> ValBuiltin(
+      List(DoubleType, DoubleType),
+      args => {
+        val x :: y :: Nil = args
+        ValDouble(x.asInstanceOf[ValDouble].value - y.asInstanceOf[ValDouble].value)
+      }
+    ),
     "__mult" -> ValBuiltin(
       List(IntType, IntType),
       args => {
@@ -50,11 +64,25 @@ class Evaluator {
         ValInt(x.asInstanceOf[ValInt].value * y.asInstanceOf[ValInt].value)
       }
     ),
+    "__mult" -> ValBuiltin(
+      List(DoubleType, DoubleType),
+      args => {
+        val x :: y :: Nil = args
+        ValDouble(x.asInstanceOf[ValDouble].value * y.asInstanceOf[ValDouble].value)
+      }
+    ),
     "__div" -> ValBuiltin(
       List(IntType, IntType),
       args => {
         val x :: y :: Nil = args
         ValInt(x.asInstanceOf[ValInt].value / y.asInstanceOf[ValInt].value)
+      }
+    ),
+    "__div" -> ValBuiltin(
+      List(DoubleType, DoubleType),
+      args => {
+        val x :: y :: Nil = args
+        ValDouble(x.asInstanceOf[ValDouble].value / y.asInstanceOf[ValDouble].value)
       }
     ),
     "__and" -> ValBuiltin(
@@ -177,11 +205,10 @@ class Evaluator {
       }
     ),
     "show" -> ValBuiltin(
-      List(IntType),
+      List(AnyType),
       args => {
         val x :: Nil = args
-        val l = x.asInstanceOf[ValInt].value
-        ValString(l.toString)
+        ValString(Value show x)
       }
     ),
     "__get" -> ValBuiltin(
@@ -231,6 +258,13 @@ class Evaluator {
             ValList(m.items)
           case _ => throw RuntimeError(s"Unsupported type ${fm.valueType} for toList.")
         }
+      }
+    ),
+    "toJson" -> ValBuiltin(
+      List(AnyType),
+      args => {
+        val fx :: Nil = args
+        ValString((Value toJson fx).toString)
       }
     ),
     "keysOf" -> ValBuiltin(

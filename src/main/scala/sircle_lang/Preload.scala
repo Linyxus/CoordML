@@ -7,6 +7,8 @@ object Preload {
       |
       |def valuesOf = map: { } => for k <- keysOf map do map.k
       |
+      |def itemsOf = map: { } => for k <- keysOf map do (k, map.k)
+      |
       |def foldl = op: Any -> Any => z: Any => xs: List => {
       |  def ret = z;
       |  for x <- xs do {
