@@ -31,6 +31,10 @@ object Preload {
       |
       |def zip = zipWith $ x => y => (x, y)
       |
+      |def restrict = keys: List => map: {} => buildMapping {
+      |  for key <- keys do (key, map.key)
+      |}
+      |
       |def namedProd = map: {} => {
       |  def keys = keysOf map;
       |  def pairs = map toList $ prod $ valuesOf map;
@@ -69,6 +73,22 @@ object Preload {
       |  }
       |}
       |
+      |def mkSeq = xs: List => {
+      |  def ret = head xs;
+      |  for t <- tail xs do {
+      |    ret = ret >> t
+      |  };
+      |  ret
+      |}
+      |
+      |def mkPar = xs: List => {
+      |  def ret = head xs;
+      |  for t <- tail xs do {
+      |    ret = ret || t
+      |  };
+      |  ret
+      |}
+      |
       |def fiboMain = n: Int => {
       |  println "fibonacci array";
       |  def arr = getFibonacci n;
@@ -89,6 +109,15 @@ object Preload {
       |    println (range i)
       |  };
       |  "finished"
+      |}
+      |
+      |def example0 = unused: Unit => {
+      |  mkPar {
+      |    for seed <- config."seeds" do {
+      |      def c = restrict ["datasets", "base_model"] config;
+      |      mkSeq $ map (x => mkTask "main.py" x x) (namedProd c)
+      |    }
+      |  }
       |}
       |
       |type Config =

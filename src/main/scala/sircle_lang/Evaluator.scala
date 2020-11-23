@@ -299,6 +299,8 @@ class Evaluator {
         ValTask(
           (l, r) match {
             case (SeqTask(xs), SeqTask(ys)) => SeqTask(xs :++ ys)
+            case (SeqTask(xs), y) => SeqTask(xs :+ y)
+            case (x, SeqTask(ys)) => SeqTask(x :: ys)
             case (x, y) => SeqTask(x :: y :: Nil)
           }
         )
@@ -313,6 +315,8 @@ class Evaluator {
         ValTask(
           (l, r) match {
             case (ParTask(xs), ParTask(ys)) => ParTask(xs :++ ys)
+            case (ParTask(xs), y) => ParTask(xs :+ y)
+            case (x, ParTask(ys)) => ParTask(x :: ys)
             case (x, y) => ParTask(x :: y :: Nil)
           }
         )
