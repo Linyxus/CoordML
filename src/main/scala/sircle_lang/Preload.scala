@@ -80,6 +80,17 @@ object Preload {
       |  }
       |}
       |
+      |def showRange = n: Int => {
+      |  println "range";
+      |  for i <- range n, i > 5 do {
+      |    print "range(";
+      |    print i;
+      |    print ") = ";
+      |    println (range i)
+      |  };
+      |  "finished"
+      |}
+      |
       |type Config =
       |  { "seeds": List
       |  , "datasets": List
