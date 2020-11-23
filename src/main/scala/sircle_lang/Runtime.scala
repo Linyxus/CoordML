@@ -7,7 +7,7 @@ class Runtime {
     val bindings = Parser.parseSource(source)
     var ret: Value = ValUnit
     for (b <- bindings)
-      ret = evaluator.executeBinding(b, Nil)
+      ret = evaluator.executeBinding(b)
     ret
   }
 
@@ -16,7 +16,7 @@ class Runtime {
     loadSource(source)
   }
 
-  def evalExpr(expr: Expr): Value = evaluator.evalExpr(evaluator.desugarExpr(expr), Nil)
+  def evalExpr(expr: Expr): Value = evaluator.evalExpr(evaluator.desugarExpr(expr))
 
   loadSource(Preload.preloadSource)
 }

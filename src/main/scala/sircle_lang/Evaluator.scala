@@ -361,16 +361,16 @@ class Evaluator {
 
   var variableEnv: SymbolBinding.Env = Nil
 
-  def locateValueWithType(name: String, local: List[(String, Value)], expectType: ValueType): Value =
-    (local :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
+  def locateValueWithType(name: String, expectType: ValueType): Value =
+    (variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
       x._1 == name && (x._2.valueType <== expectType)
     } match {
       case Some(value) => value._2
       case None => throw RuntimeError(s"Can not resolve symbol $name with type $expectType.")
     }
 
-  def locateValue(name: String, localVal: List[(String, Value)]): Value =
-    (localVal :++ variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
+  def locateValue(name: String): Value =
+    (variableEnv.map { x => (x.name, x.value) } :++ valueBindings :++ valuePrelude).find { x =>
       x._1 == name
     } match {
       case Some(value) => value._2
@@ -411,7 +411,7 @@ class Evaluator {
     x
   }
 
-  def executeBinding(binding: Binding, localVal: List[(String, Value)] = Nil): Value = binding match {
+  def executeBinding(binding: Binding): Value = binding match {
     case ValBinding(name, valType, expr) =>
       val t = evalTypeExpr(valType)
 
@@ -422,13 +422,13 @@ class Evaluator {
         case None =>
       }
 
-      val v = getValue(expr, t, localVal)
+      val v = getValue(expr, t)
       valueBindings = (name -> v) :: valueBindings
       v
 
     case ExprBinding(expr) =>
       val x = desugarExpr(expr)
-      evalExpr(x, localVal)
+      evalExpr(x)
 
     case TypeBinding(name, typeExpr) =>
       typePrelude find { x => x._1 == name } match {
@@ -442,25 +442,25 @@ class Evaluator {
     case _ => throw RuntimeError(s"Can not execute unimplemented binding: ${Binding show binding}.")
   }
 
-  def getValue(expr: Expr, expect: ValueType, localVal: List[(String, Value)]): Value = {
-    val v = evalExpr(desugarExpr(expr), localVal)
+  def getValue(expr: Expr, expect: ValueType): Value = {
+    val v = evalExpr(desugarExpr(expr))
     if (expect <== v.valueType) v else throw RuntimeError(s"Type mismatch: $expect and ${v.valueType}.")
   }
 
-  def executeEffect(effect: Effect, localVal: List[(String, Value)]): Value = effect match {
+  def executeEffect(effect: Effect): Value = effect match {
     case ValueBindEffect(name, valType, expr) =>
       val t = evalTypeExpr(valType)
 
       valuePrelude find { x => x._1 == name && (x._2.valueType <== t) } match {
         case Some(_) => throw RuntimeError(s"Cannot override built-in symbol name $name.")
         case None =>
-          val v = getValue(expr, t, localVal)
+          val v = getValue(expr, t)
           variableEnv = new SymbolBinding(name, v) :: variableEnv
           v
       }
 
     case AssignEffect(name, expr) =>
-      val v = evalExpr(desugarExpr(expr), localVal)
+      val v = evalExpr(desugarExpr(expr))
 
       variableEnv.find(_.name == name) match {
         case Some(binding) =>
@@ -471,42 +471,42 @@ class Evaluator {
         case None => throw RuntimeError(s"Can not assign value to undefined symbol $name.")
       }
 
-    case ExprEffect(expr) => evalExpr(desugarExpr(expr), localVal)
+    case ExprEffect(expr) => evalExpr(desugarExpr(expr))
   }
 
   def mergeBindingEnv[A](left: BindingEnv[A], right: BindingEnv[A]): BindingEnv[A] =
     Map.from((left :++ right).reverse).toList
 
-  def evalExpr(expr: Expr, localVal: BindingEnv[Value]): Value =
+  def evalExpr(expr: Expr): Value =
     expr match {
       case ExprValue(value) => value
-      case ExprIdentifier(name) => locateValue(name, localVal)
-      case ExprTuple(items) => ValTuple(items map (x => evalExpr(x, localVal)))
+      case ExprIdentifier(name) => locateValue(name)
+      case ExprTuple(items) => ValTuple(items map (x => evalExpr(x)))
       case ExprBlock(bindings) => bindings match {
         case Nil => ValUnit
         case _ =>
           val origEnv = variableEnv
-          val ret = (bindings map (x => executeEffect(x, localVal))).last
+          val ret = (bindings map (x => executeEffect(x))).last
           variableEnv = origEnv
           ret
       }
       case ExprMapping(pairs) => ValMapping(Map from {
         pairs map { x =>
-          x._1 -> evalExpr(x._2, localVal)
+          x._1 -> evalExpr(x._2)
         }
       })
 
       case ExprLambda(argName, argType, body) =>
         val t = evalTypeExpr(argType)
         val variableBinding = variableEnv.map { x => (x.name, x.value) }
-        ValLambda(argName, t, body, mergeBindingEnv(localVal, variableBinding))
+        ValLambda(argName, t, body, variableBinding)
 
       case ExprApp(func, arg) =>
-        val x = evalExpr(arg, localVal)
+        val x = evalExpr(arg)
 
         (func match {
-          case ExprIdentifier(name) => locateValueWithType(name, localVal, LambdaType(x.valueType))
-          case _ => evalExpr(func, localVal)
+          case ExprIdentifier(name) => locateValueWithType(name, LambdaType(x.valueType))
+          case _ => evalExpr(func)
         }) match {
           case ValBuiltin(argSig, func, resolved) =>
             val resolvedP = resolved :+ x
@@ -516,25 +516,36 @@ class Evaluator {
               ValBuiltin(argSig, func, resolvedP)
             }
           case ValLambda(argName, _, body, lexical) =>
-            val innerLocal = (argName -> x) :: mergeBindingEnv(lexical, localVal)
-            evalExpr(body, innerLocal)
+            val innerLocal = (argName -> x) :: lexical
+            val origVar = variableEnv
+            variableEnv = innerLocal.map { b => new SymbolBinding(b._1, b._2) }
+            val res = evalExpr(body)
+            variableEnv = origVar
+            res
           case _ => throw RuntimeError("Error in type checker.")
         }
 
       case ExprIf(cond, left, right) =>
-        val c = evalExpr(cond, localVal)
+        val c = evalExpr(cond)
         if (c.valueType == BooleanType) {
           if (c.asInstanceOf[ValBoolean].value) {
-            evalExpr(left, localVal)
+            evalExpr(left)
           } else right match {
-            case Some(value) => evalExpr(value, localVal)
+            case Some(value) => evalExpr(value)
             case None => ValUnit
           }
         } else throw RuntimeError(s"Expect if condition type Boolean, but got ${c.valueType}.")
 
       case ExprFor(combinators, expr) =>
-        val forEnv = generateForEnvs(combinators, localVal)
-        forEnv.map { x => evalExpr(desugarExpr(expr), x :++ localVal) } match {
+        val forEnv = generateForEnvs(combinators)
+        forEnv.map { x =>
+          val origEnv = variableEnv
+          val innerLocal = x.map { b => new SymbolBinding(b._1, b._2) }
+          variableEnv = innerLocal :++ origEnv
+          val res = evalExpr(desugarExpr(expr))
+          variableEnv = origEnv
+          res
+        } match {
           case Nil => ValList(Nil)
           case xs =>
             ValList(xs)
@@ -543,36 +554,44 @@ class Evaluator {
       case _ => throw RuntimeError(s"Unimplemented expr ${Expr show expr}.")
     }
 
-  def generateForEnvs(comb: List[ForCombinator], localVal: BindingEnv[Value]): List[BindingEnv[Value]] = {
+  def generateForEnvs(comb: List[ForCombinator]): List[BindingEnv[Value]] = {
     var ret: List[BindingEnv[Value]] = List(Nil)
     for (c <- comb) {
       c match {
         case ForBind(name, expr) =>
-          ret = extendForEnvs(ret, name, expr, localVal)
+          ret = extendForEnvs(ret, name, expr)
         case ForFilter(expr) =>
-          ret = filterForEnvs(ret, expr, localVal)
+          ret = filterForEnvs(ret, expr)
       }
     }
     ret
   }
 
-  def extendForEnvs(env: List[BindingEnv[Value]], name: String, expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
-    env flatMap { x => extendForEnv(x, name, expr, localVal) }
+  def extendForEnvs(env: List[BindingEnv[Value]], name: String, expr: Expr): List[BindingEnv[Value]] =
+    env flatMap { x => extendForEnv(x, name, expr) }
 
-  def extendForEnv(env: BindingEnv[Value], name: String, expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
+  def extendForEnv(env: BindingEnv[Value], name: String, expr: Expr): List[BindingEnv[Value]] =
     env find { x => x._1 == name } match {
       case Some(_) => throw RuntimeError(s"Duplicated symbol $name in for expansion.")
       case None =>
-        val v = evalExpr(desugarExpr(expr), env :++ localVal)
+        val origEnv = variableEnv
+        val localEnv = env.map { b => new SymbolBinding(b._1, b._2) }
+        variableEnv = localEnv :++ origEnv
+        val v = evalExpr(desugarExpr(expr))
+        variableEnv = origEnv
         if (ListType <== v.valueType)
           v.asInstanceOf[ValList].items.map { x => (name -> x) :: env }
         else
           throw RuntimeError(s"Expecting lists but found ${v.valueType} in for expansion.")
     }
 
-  def filterForEnvs(env: List[BindingEnv[Value]], expr: Expr, localVal: BindingEnv[Value]): List[BindingEnv[Value]] =
+  def filterForEnvs(env: List[BindingEnv[Value]], expr: Expr): List[BindingEnv[Value]] =
     env.filter { x =>
-      val v = evalExpr(desugarExpr(expr), x :++ localVal)
+      val origEnv = variableEnv
+      val localEnv = x.map { b => new SymbolBinding(b._1, b._2) }
+      variableEnv = localEnv :++ origEnv
+      val v = evalExpr(desugarExpr(expr))
+      variableEnv = origEnv
       if (v.valueType == BooleanType)
         v.asInstanceOf[ValBoolean].value
       else
