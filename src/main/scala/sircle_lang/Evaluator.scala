@@ -110,6 +110,17 @@ class Evaluator {
         }
       }
     ),
+    "__neq" -> ValBuiltin(
+      List(AnyType, AnyType),
+      args => {
+        val x :: y :: Nil = args
+        (x, y) match {
+          case (ValList(Nil), ValList(Nil)) => ValBoolean(false)
+          case _ =>
+            ValBoolean(x != y)
+        }
+      }
+    ),
     "__lt" -> ValBuiltin(
       List(IntType, IntType),
       args => {

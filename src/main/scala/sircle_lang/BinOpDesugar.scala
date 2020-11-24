@@ -16,6 +16,7 @@ object BinOpDesugar extends TreeWalkDesugar {
     GT -> "__gt",
     GE -> "__ge",
     EQ -> "__eq",
+    NEQ -> "__neq",
     GET -> "__get",
     SEQ -> "__seq",
     PAR -> "__par",
