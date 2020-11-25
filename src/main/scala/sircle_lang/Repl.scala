@@ -31,7 +31,7 @@ object Repl extends App {
   )
 
   println("Sircle REPL v0.0.0")
-  println("Loading preloaded source")
+  println("Loading prelude source")
   try {
     evalStr(Preload.preloadSource)
   } catch {
