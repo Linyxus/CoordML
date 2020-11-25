@@ -11,6 +11,8 @@
  - *Web Portal*, to display runner status and experiment results and aggregate experiment results in a flexible and clear way. **(Working in progress)**
  
 ## Sircle DSL
+
+![Sircle Screenshot](./screenshots/sircle_welcome.png)
  
 Sircle is a powerful DSL for defining computational tasks. It is in functional style, supporting first-class functions, ML-style application and currying.
 
