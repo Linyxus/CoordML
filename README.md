@@ -1,2 +1,28 @@
 # CoordML
  Manage ML experiments with ease.
+ 
+ CoordML is a light-weight Machine Learning experiment tool that can enable users to easily define computational tasks and distribute tasks across multiple instances. It can also aggregate and display experiment results in through unifed web interface.
+ 
+ CoordML is currently working in progress. It consists of the following major components:
+ 
+ - *Sircle DSL*, a functional-type and interpreted language, used to define computational tasks in a expressive and flexible way. **(Finished)**
+ - *CoordML Central*, the central server to create experiments and distribute tasks. **(Working in progress)**
+ - *Runner*, to run tasks and extract results. **(Working in progress)**
+ - *Web Portal*, to display runner status and experiment results and aggregate experiment results in a flexible and clear way. **(Working in progress)**
+ 
+## Sircle DSL
+ 
+Sircle is a powerful DSL for defining computational tasks. It is in functional style, supporting first-class functions, ML-style application and currying.
+
+A simple example of Sircle:
+```
+map (compose println $ x => "Hello, " + x) ["Sircle", "CoordML"]
+```
+This will print out
+```
+Hello, Sircle
+Hello, CoordML
+```
+
+For a detailed guide to Sircle, you may refer to the [Documentation](https://coordml.github.io/sircle_dsl/introduction/).
+ 
