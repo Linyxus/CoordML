@@ -30,6 +30,10 @@ object WorkerManager {
 
   final case class WorkerTaskDispatched(expId: String, tasks: List[(String, TaskInstance)])
 
+  final case class WorkerTaskFetch(workerId: String, replyTo: ActorRef[WorkerTaskFetched]) extends Command
+
+  final case class WorkerTaskFetched(tasks: List[ExpInstance])
+
   sealed trait Event
 
   final case class AddWorker(workerId: String) extends Event with JacksonEvt
@@ -37,6 +41,8 @@ object WorkerManager {
   final case class UpdateWorkerGpu(workerId: String, gpuInfo: List[GpuInfo]) extends Event with JacksonEvt
 
   final case class AppendWorkerTask(workerId: String, expInstance: ExpInstance) extends Event with JacksonEvt
+
+  final case class CleanupWorkerTask(workerId: String) extends Event with JacksonEvt
 
   final case class State(workers: Map[String, WorkerInfo])
 
@@ -69,6 +75,13 @@ object WorkerManager {
               }
             )
           }
+        case WorkerTaskFetch(workerId, replyTo) =>
+          state.workers.get(workerId) match {
+            case Some(info) => Effect.persist(CleanupWorkerTask(workerId)).thenReply(replyTo) { _ =>
+              WorkerTaskFetched(info.pendingTasks)
+            }
+            case None => Effect.none
+          }
       },
       eventHandler = (state, evt) => evt match {
         case AddWorker(workerId) => State(state.workers.updated(workerId, WorkerInfo(workerId, List.empty, List.empty)))
@@ -80,6 +93,12 @@ object WorkerManager {
             WorkerInfo(i.workerId, i.gpuStatus, i.pendingTasks.appended(expInstance))
           }
         })
+        case CleanupWorkerTask(workerId) => State(
+          workers = state.workers.updatedWith(workerId) {
+            case None => None
+            case Some(info) => Some(WorkerInfo(info.workerId, info.gpuStatus, Nil))
+          }
+        )
       }
     )
 }

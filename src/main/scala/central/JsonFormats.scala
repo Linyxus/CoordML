@@ -80,4 +80,6 @@ object JsonFormats {
   implicit val workerInfoFormat: RootJsonFormat[WorkerInfo] = jsonFormat3(WorkerInfo)
   implicit val workersListFormat: RootJsonFormat[WorkerManager.WorkersList] =
     jsonFormat1(WorkerManager.WorkersList)
+
+  implicit val workerTaskFetched: RootJsonFormat[WorkerManager.WorkerTaskFetched] = jsonFormat1(WorkerManager.WorkerTaskFetched)
 }
