@@ -26,9 +26,9 @@ object ExpManager {
 
   sealed trait Event
 
-  final case class AddExpInstance(expInstance: ExpInstance) extends Event
+  final case class AddExpInstance(expInstance: ExpInstance) extends Event with JacksonEvt
 
-  final case class UpdateExpTaskInstances(resp: WorkerTaskDispatched) extends Event
+  final case class UpdateExpTaskInstances(resp: WorkerTaskDispatched) extends Event with JacksonEvt
 
   final case class State(expInstances: Map[String, ExpInstance])
 

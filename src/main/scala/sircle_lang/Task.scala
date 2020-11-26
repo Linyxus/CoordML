@@ -1,7 +1,14 @@
 package sircle_lang
 
 import spray.json._
+import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes(Array(
+new JsonSubTypes.Type(value = classOf[SeqTask], name = "seqTask"),
+new JsonSubTypes.Type(value = classOf[ParTask], name = "parTask"),
+new JsonSubTypes.Type(value = classOf[SingletonTask], name = "singletonTask")
+))
 sealed trait Task
 
 case class SeqTask(subtasks: List[Task]) extends Task

@@ -32,11 +32,11 @@ object WorkerManager {
 
   sealed trait Event
 
-  final case class AddWorker(workerId: String) extends Event
+  final case class AddWorker(workerId: String) extends Event with JacksonEvt
 
-  final case class UpdateWorkerGpu(workerId: String, gpuInfo: List[GpuInfo]) extends Event
+  final case class UpdateWorkerGpu(workerId: String, gpuInfo: List[GpuInfo]) extends Event with JacksonEvt
 
-  final case class AppendWorkerTask(workerId: String, expInstance: ExpInstance) extends Event
+  final case class AppendWorkerTask(workerId: String, expInstance: ExpInstance) extends Event with JacksonEvt
 
   final case class State(workers: Map[String, WorkerInfo])
 

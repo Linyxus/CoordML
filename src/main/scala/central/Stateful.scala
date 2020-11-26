@@ -9,7 +9,7 @@ object Stateful {
   case class Show(replyTo: ActorRef[Int]) extends Command
 
   sealed trait Event
-  case object Increment extends Event
+  case object Increment extends Event with JacksonEvt
 
   def apply(): Behavior[Command] =
     EventSourcedBehavior[Command, Event, Int](

@@ -1,6 +1,6 @@
 package central
 
-import sircle_lang.{RuntimeError, Task, ValTask, ParseError}
+import sircle_lang.{RuntimeError, ValTask, ParseError}
 
 case class ResultView(rowKey: List[String], columnKey: List[String])
 
@@ -9,7 +9,7 @@ case class ExpBlueprint(title: String,
                         envPath: String,
                         resultParser: String,
                         resultView: ResultView,
-                        task: Task)
+                        task: JsTask)
 
 object ExpBlueprint {
   def fromRequest(request: CreateExpRequest): Either[String, ExpBlueprint] =
@@ -20,7 +20,7 @@ object ExpBlueprint {
         case ValTask(task) => task
         case v => throw RuntimeError(s"Returned value type of resolve is ${v.valueType}, expecting task.")
       }
-      Right(ExpBlueprint(request.title, request.author, request.envPath, request.resultParse, request.resultView, task))
+      Right(ExpBlueprint(request.title, request.author, request.envPath, request.resultParse, request.resultView, JsTask fromTask task))
     } catch {
       case RuntimeError(msg) => Left("Runtime error: " + msg)
       case ParseError(msg) => Left("Parse error: " + msg)

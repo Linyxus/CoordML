@@ -1,0 +1,3 @@
+package central
+
+trait JacksonEvt

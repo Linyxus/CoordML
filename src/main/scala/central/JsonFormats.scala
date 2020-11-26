@@ -42,7 +42,7 @@ object JsonFormats {
       )
       case instance: SingletonTaskInstance => JsObject(
         "type" -> JsString("singleton"),
-        "task" -> sircle_lang.Task.toJson(instance.task),
+        "task" -> JsTask.toJson(instance.jsTask),
         "status" -> (instance.status match {
           case TaskStatusDone(results) => results.toJson
           case TaskStatusTodo => JsNull
@@ -63,7 +63,7 @@ object JsonFormats {
       "env_path" -> obj.envPath.toJson,
       "result_parse" -> obj.resultParser.toJson,
       "result_view" -> obj.resultView.toJson,
-      "task" -> obj.task.toJson
+      "task" -> JsTask.toJson(obj.task)
     )
   }
 
