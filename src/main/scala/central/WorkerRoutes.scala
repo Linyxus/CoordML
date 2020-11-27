@@ -34,6 +34,9 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
       WorkerManager.WorkerTaskFetch(workerId, _)
     }
 
+  def getStatus: Future[WorkerManager.StatusResponse] =
+    workerManager ? WorkerManager.GetStatus
+
   def workerRoutes: Route =
     pathPrefix("api") {
       pathPrefix("workers") {
@@ -61,6 +64,9 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
                 complete(tasks)
               }
             }
+          },
+          pathPrefix("status") {
+            onSuccess(getStatus) { x => complete(x) }
           }
         )
       }
