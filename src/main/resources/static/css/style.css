@@ -47,3 +47,13 @@
     margin-bottom: -0.6em;
     font-size: 2.3em;
 }
+
+.task-args {
+    font-family: 'Roboto Mono';
+    font-size: 1em;
+    margin-bottom: 1em;
+}
+
+.task-title {
+    margin-top: 0.5em;
+}
