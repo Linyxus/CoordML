@@ -5,11 +5,15 @@ import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
 import java.util.UUID.randomUUID
 
+import akka.actor.typed.scaladsl.Behaviors
+
 final case class GpuMemUsage(used: Int, capacity: Int)
 
 final case class GpuInfo(name: String, memUsage: GpuMemUsage, load: Double)
 
-final case class WorkerInfo(workerId: String, gpuStatus: List[GpuInfo], pendingTasks: List[ExpInstance])
+final case class WorkerInfo(workerId: String, gpuStatus: List[GpuInfo], pendingTasks: List[RunnableGraph])
+
+final case class ResultInfo(expId: String, taskId: String, results: Map[String, String])
 
 object WorkerManager {
 
@@ -25,14 +29,16 @@ object WorkerManager {
 
   final case class WorkerReportGpu(workerId: String, gpuInfo: List[GpuInfo], replyTo: ActorRef[Unit]) extends Command
 
-  final case class WorkerTaskDispatch(expInstance: ExpInstance, tasks: List[TaskInstance],
+  final case class WorkerTaskDispatch(expInstance: ExpInstance,
                                       replyTo: ActorRef[WorkerTaskDispatched]) extends Command
 
-  final case class WorkerTaskDispatched(expId: String, tasks: List[(String, TaskInstance)])
+  final case class WorkerTaskDispatched(expId: String, tasks: Map[String, String])
 
   final case class WorkerTaskFetch(workerId: String, replyTo: ActorRef[WorkerTaskFetched]) extends Command
 
-  final case class WorkerTaskFetched(tasks: List[ExpInstance])
+  final case class WorkerTaskFetched(tasks: List[RunnableGraph])
+
+  final case class WorkerReportResult(workerId: String, resultInfo: ResultInfo, replyTo: ActorRef[Unit]) extends Command
 
   sealed trait Event
 
@@ -40,13 +46,13 @@ object WorkerManager {
 
   final case class UpdateWorkerGpu(workerId: String, gpuInfo: List[GpuInfo]) extends Event with JacksonEvt
 
-  final case class AppendWorkerTask(workerId: String, expInstance: ExpInstance) extends Event with JacksonEvt
+  final case class AppendWorkerTask(workerId: String, runnableGraph: RunnableGraph) extends Event with JacksonEvt
 
   final case class CleanupWorkerTask(workerId: String) extends Event with JacksonEvt
 
   final case class State(workers: Map[String, WorkerInfo])
 
-  def apply(): Behavior[Command] =
+  def apply(): Behavior[Command] = Behaviors.setup[Command] { context =>
     EventSourcedBehavior[Command, Event, State](
       persistenceId = PersistenceId.ofUniqueId("worker-manager"),
       emptyState = State(Map.empty),
@@ -58,22 +64,16 @@ object WorkerManager {
         case WorkerReportGpu(workerId, gpuInfo, replyTo) =>
           Effect.persist(UpdateWorkerGpu(workerId, gpuInfo))
             .thenReply(replyTo) { _ => () }
-        case WorkerTaskDispatch(expInstance, tasks, replyTo) =>
-          val workerIds = state.workers.keys.toList
-          val numWorkers = workerIds.length
-          val numPar = tasks.length
-          val perWorker = (numPar.toDouble / numWorkers.toDouble).ceil.toInt
-          val taskSeg = tasks.grouped(perWorker)
-          val assignments = workerIds zip taskSeg
-          Effect.persist(assignments map { x =>
-            AppendWorkerTask(x._1, ExpInstance(expInstance.expId, expInstance.blueprint, x._2 map { t => (x._1, t) }))
-          }).thenReply(replyTo) { _ =>
-            WorkerTaskDispatched(
-              expInstance.expId,
-              assignments.flatMap { x =>
-                x._2 map { t => (x._1, t) }
-              }
-            )
+        case WorkerTaskDispatch(expInstance, replyTo) =>
+          val assignments = assignGraphs(expInstance.taskGraphs.keys.toList, state.workers.keys.toList)
+          val events: Iterable[Event] =
+            for ((graphId, workerId) <- assignments)
+              yield AppendWorkerTask(
+                workerId,
+                RunnableGraph.fromTaskGraph(expInstance, expInstance.taskGraphs(graphId))
+              )
+          Effect.persist(events.toSeq).thenReply(replyTo) { _ =>
+            WorkerTaskDispatched(expInstance.expId, assignments)
           }
         case WorkerTaskFetch(workerId, replyTo) =>
           state.workers.get(workerId) match {
@@ -82,15 +82,19 @@ object WorkerManager {
             }
             case None => Effect.none
           }
+
+        case WorkerReportResult(workerId, resultInfo, replyTo) =>
+          // report the result
+          Effect.none.thenReply(replyTo) { _ => () }
       },
       eventHandler = (state, evt) => evt match {
         case AddWorker(workerId) => State(state.workers.updated(workerId, WorkerInfo(workerId, List.empty, List.empty)))
         case UpdateWorkerGpu(workerId, gpuInfo) => State(state.workers.updatedWith(workerId) { mx =>
           mx.map(info => WorkerInfo(info.workerId, gpuInfo, info.pendingTasks))
         })
-        case AppendWorkerTask(workerId, expInstance) => State(state.workers.updatedWith(workerId) { m =>
+        case AppendWorkerTask(workerId, taskGraph) => State(state.workers.updatedWith(workerId) { m =>
           m.map { i =>
-            WorkerInfo(i.workerId, i.gpuStatus, i.pendingTasks.appended(expInstance))
+            WorkerInfo(i.workerId, i.gpuStatus, i.pendingTasks.appended(taskGraph))
           }
         })
         case CleanupWorkerTask(workerId) => State(
@@ -101,4 +105,10 @@ object WorkerManager {
         )
       }
     )
+  }
+
+  def assignGraphs(graphs: List[String], workers: List[String]): Map[String, String] = {
+    val rounds = (graphs.length.toDouble / workers.length.toDouble).ceil.toInt
+    graphs.zip { Tools.duplicate(workers, rounds) }.toMap
+  }
 }

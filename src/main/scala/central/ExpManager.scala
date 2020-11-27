@@ -1,5 +1,7 @@
 package central
 
+import akka.actor.typed.receptionist.ServiceKey
+import akka.actor.typed.receptionist.Receptionist
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
@@ -18,6 +20,7 @@ object ExpManager {
 
   sealed trait Command
 
+
   final case class ExpCreate(request: CreateExpRequest, replyTo: ActorRef[Either[String, ExpCreated]]) extends Command
 
   final case class ExpCreated(expId: String)
@@ -32,7 +35,11 @@ object ExpManager {
 
   final case class State(expInstances: Map[String, ExpInstance])
 
+  val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("expManagerKey")
+
   def apply(workerManager: ActorRef[WorkerManager.Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
+    context.system.receptionist ! Receptionist.Register(ExpManagerKey, context.self)
+
     EventSourcedBehavior[Command, Event, State](
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
@@ -42,14 +49,13 @@ object ExpManager {
             case Left(value) => Effect.none.thenReply(replyTo) { _ => Left(value) }
             case Right(value) =>
               val expInst = ExpInstance fromBluePrint value
-              val tasks = ExpInstance getTaskInstances value.task
               implicit val timeout: Timeout =
                 Timeout.create(context.system.settings.config.getDuration("coordml-central.routes.ask-timeout"))
               Effect.persist(AddExpInstance(expInst)).thenRun { _ =>
                 replyTo ! Right { ExpCreated { expInst.expId } }
-                context.ask(workerManager, ref => WorkerManager.WorkerTaskDispatch(expInst, tasks, ref)) {
+                context.ask(workerManager, ref => WorkerManager.WorkerTaskDispatch(expInst, ref)) {
                   case Success(value) => TaskDispatchedWrapper(value)
-                  case Failure(_) => TaskDispatchedWrapper(WorkerTaskDispatched(expInst.expId, Nil))
+                  case Failure(_) => TaskDispatchedWrapper(WorkerTaskDispatched(expInst.expId, Map.empty))
                 }
               }
           }
@@ -59,7 +65,7 @@ object ExpManager {
         case AddExpInstance(expInstance) => State(state.expInstances.updated(expInstance.expId, expInstance))
         case UpdateExpTaskInstances(resp) => State(state.expInstances.updatedWith(resp.expId) { m =>
           m.map { exp =>
-            ExpInstance(exp.expId, exp.blueprint, resp.tasks)
+            ExpInstance(exp.expId, exp.blueprint, exp.taskGraphs, resp.tasks)
           }
         })
       }

@@ -31,24 +31,17 @@ object JsonFormats {
   implicit val expCreatedFormat: RootJsonFormat[ExpManager.ExpCreated] = jsonFormat1(ExpManager.ExpCreated)
 
   implicit object TaskInstanceFormat extends RootJsonFormat[TaskInstance] {
-    def write(taskInstance: TaskInstance): JsValue = taskInstance match {
-      case ParTaskInstance(subtasks) => JsObject(
-        "type" -> JsString("par"),
-        "subtasks" -> JsArray((subtasks map write).toVector)
-      )
-      case SeqTaskInstance(subtasks) => JsObject(
-        "type" -> JsString("seq"),
-        "subtasks" -> JsArray((subtasks map write).toVector)
-      )
-      case instance: SingletonTaskInstance => JsObject(
-        "type" -> JsString("singleton"),
-        "task" -> JsTask.toJson(instance.jsTask),
+    def write(instance: TaskInstance): JsValue =
+      JsObject(
+        "task_id" -> instance.taskId.toJson,
+        "args" -> instance.args.toJson,
+        "meta" -> instance.meta.toJson,
+        "executable" -> instance.executable.toJson,
         "status" -> (instance.status match {
           case TaskStatusDone(results) => results.toJson
           case TaskStatusTodo => JsNull
         })
       )
-    }
 
     override def read(json: JsValue): TaskInstance =
       throw new NotImplementedError("Converting from Json to TaskInstance is not supported.")
@@ -67,13 +60,44 @@ object JsonFormats {
     )
   }
 
+  implicit object TaskGraphFormat extends RootJsonFormat[TaskGraph] {
+    override def write(obj: TaskGraph): JsValue = JsObject(
+      "graph_id" -> obj.graphId.toJson,
+      "nodes" -> obj.nodes.toJson,
+      "dependencies" -> obj.dependencies.toJson
+    )
+
+    override def read(json: JsValue): TaskGraph = ???
+  }
+
+  implicit object TaskRunnableFormat extends RootJsonFormat[TaskRunnable] {
+    override def write(obj: TaskRunnable): JsValue = JsObject(
+      "exp_id" -> obj.expId.toJson,
+      "env_path" -> obj.envPath.toJson,
+      "result_parse" -> obj.resultParse.toJson,
+      "task" -> obj.taskInstance.toJson
+    )
+
+    override def read(json: JsValue): TaskRunnable = ???
+  }
+
+  implicit object RunnableGraphFormat extends RootJsonFormat[RunnableGraph] {
+    override def write(obj: RunnableGraph): JsValue = JsObject(
+      "graph_id" -> obj.graphId.toJson,
+      "nodes" -> obj.nodes.toJson,
+      "dependencies" -> obj.dependencies.toJson
+    )
+
+    override def read(json: JsValue): RunnableGraph = ???
+  }
+
   implicit object ExpInstanceFormat extends RootJsonFormat[ExpInstance] {
     override def read(json: JsValue): ExpInstance = ???
 
     override def write(obj: ExpInstance): JsValue = JsObject(
       "exp_id" -> obj.expId.toJson,
       "blueprint" -> obj.blueprint.toJson,
-      "tasks" -> obj.taskInstances.toJson
+      "taskGraphs" -> obj.taskGraphs.toJson
     )
   }
 
