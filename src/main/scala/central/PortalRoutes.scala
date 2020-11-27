@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Route
 
 object PortalRoutes {
   val portalRoutes: Route =
-    pathPrefix("portal") {
+    pathPrefix("") {
       get {
         getFromResourceDirectory("static")
       }
