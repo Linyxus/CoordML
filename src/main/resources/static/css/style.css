@@ -1,0 +1,41 @@
+.title-portal {
+    font-family: serif;
+    font-style: italic;
+}
+
+.title-version {
+    font-family: monospace;
+    font-size: 0.6em;
+}
+
+.exp-progress {
+    font-family: 'Roboto Mono';
+    font-style: italic;
+    font-size: 3em;
+}
+
+.exp-subtitle {
+    margin-top: -1em;
+    font-family: 'Roboto Mono';
+    color: grey;
+    font-size: 1.2em;
+}
+
+:root {
+    --mainColor: #5daae0;
+}
+
+.link {
+    background:
+        linear-gradient(to bottom, var(--mainColor) 0%,
+            var(--mainColor) 100%);
+    background-position: 0 100%;
+    background-repeat  : repeat-x;
+    background-size    : 4px 0px;
+    text-decoration    : none;
+    transition         : background-size .08s;
+}
+
+.link:hover {
+    background-size: 4px 3px;
+}
