@@ -118,4 +118,6 @@ object JsonFormats {
   implicit val workerTaskFetched: RootJsonFormat[WorkerManager.WorkerTaskFetched] = jsonFormat1(WorkerManager.WorkerTaskFetched)
 
   implicit val statusResponseFormat: RootJsonFormat[WorkerManager.StatusResponse] = jsonFormat2(WorkerManager.StatusResponse)
+
+  implicit val expOverviewResponseFormat: RootJsonFormat[ExpManager.ExpOverviewResponse] = jsonFormat4(ExpManager.ExpOverviewResponse)
 }

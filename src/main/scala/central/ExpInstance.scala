@@ -24,4 +24,7 @@ object ExpInstance {
     taskGraphs = getTaskGraphs(blueprint.task).map { g => g.graphId -> g }.toMap,
     workerSchedule = Map.empty
   )
+
+  def tasksOf(expInstance: ExpInstance): List[TaskInstance] =
+    expInstance.taskGraphs.values.flatMap { x => x.nodes } .toList
 }

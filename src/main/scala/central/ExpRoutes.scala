@@ -22,6 +22,9 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
   def expCreate(request: CreateExpRequest): Future[Either[String, ExpCreated]] =
     expManager.ask(ExpCreate(request, _))
 
+  def getExpOverview(expId: String): Future[Option[ExpOverviewResponse]] =
+    expManager.ask(GetExpOverview(expId, _))
+
   def expRoutes: Route =
     pathPrefix("api") {
       pathPrefix("exp") {
@@ -31,6 +34,14 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
               onSuccess(expCreate(req)) {
                 case Left(errMsg) => complete((StatusCodes.InternalServerError, errMsg))
                 case Right(value) => complete(value)
+              }
+            }
+          },
+
+          pathPrefix("getOverview") {
+            parameters("exp_id") { expId =>
+              rejectEmptyResponse {
+                onSuccess(getExpOverview(expId)) { resp => complete(resp) }
               }
             }
           }

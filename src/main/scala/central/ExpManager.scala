@@ -33,6 +33,10 @@ object ExpManager {
 
   final case class WorkerReportResult(resultInfo: ResultInfo) extends Command
 
+  final case class GetExpOverview(expId: String, replyTo: ActorRef[Option[ExpOverviewResponse]]) extends Command
+
+  final case class ExpOverviewResponse(expId: String, title: String, envPath: String, progress: Double)
+
   sealed trait Event
 
   final case class AddExpInstance(expInstance: ExpInstance) extends Event with JacksonEvt
@@ -53,6 +57,24 @@ object ExpManager {
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
       commandHandler = (_, cmd) => cmd match {
+        case GetExpOverview(expId, replyTo) =>
+          Effect.none.thenReply(replyTo) { state =>
+            val f = State.expInstances ^|-? index(expId) getOption state
+            f.map { e =>
+              val tasks = ExpInstance.tasksOf(e)
+              ExpOverviewResponse(
+                expId = e.expId,
+                title = e.blueprint.title,
+                envPath = e.blueprint.envPath,
+                progress = tasks.count { t =>
+                  t.status match {
+                    case _: TaskStatusTodo => false
+                    case TaskStatusDone(_) => true
+                  }
+                } .toDouble / tasks.length.toDouble
+              )
+            }
+          }
         case ExpCreate(request, replyTo) =>
           ExpBlueprint.fromRequest(request) match {
             case Left(value) => Effect.none.thenReply(replyTo) { _ => Left(value) }

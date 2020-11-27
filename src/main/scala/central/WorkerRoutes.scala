@@ -59,7 +59,7 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
             }
           },
           pathPrefix("fetchTasks") {
-            entity(as[String]) { workerId =>
+            parameters("worker_id") { workerId =>
               onSuccess(workerTaskFetch(workerId)) { tasks =>
                 complete(tasks)
               }
