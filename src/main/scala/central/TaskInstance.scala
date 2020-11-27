@@ -2,6 +2,9 @@ package central
 
 import java.util.UUID
 
+import monocle.macros.Lenses
+
+@Lenses
 case class TaskInstance(taskId: String,
                         executable: String,
                         args: Map[String, String],

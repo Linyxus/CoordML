@@ -30,6 +30,8 @@ object JsonFormats {
   implicit val createExpRequestFormat: RootJsonFormat[CreateExpRequest] = jsonFormat7(CreateExpRequest)
   implicit val expCreatedFormat: RootJsonFormat[ExpManager.ExpCreated] = jsonFormat1(ExpManager.ExpCreated)
 
+  implicit val resultInfoFormat: RootJsonFormat[ResultInfo] = jsonFormat4(ResultInfo)
+
   implicit object TaskInstanceFormat extends RootJsonFormat[TaskInstance] {
     def write(instance: TaskInstance): JsValue =
       JsObject(

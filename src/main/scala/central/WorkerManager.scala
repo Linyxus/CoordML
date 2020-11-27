@@ -13,7 +13,7 @@ final case class GpuInfo(name: String, memUsage: GpuMemUsage, load: Double)
 
 final case class WorkerInfo(workerId: String, gpuStatus: List[GpuInfo], pendingTasks: List[RunnableGraph])
 
-final case class ResultInfo(expId: String, taskId: String, results: Map[String, String])
+final case class ResultInfo(expId: String, graphId: String, taskId: String, results: Map[String, Double])
 
 object WorkerManager {
 
@@ -32,7 +32,7 @@ object WorkerManager {
   final case class WorkerTaskDispatch(expInstance: ExpInstance,
                                       replyTo: ActorRef[WorkerTaskDispatched]) extends Command
 
-  final case class WorkerTaskDispatched(expId: String, tasks: Map[String, String])
+  final case class WorkerTaskDispatched(expId: String, schedule: Map[String, String])
 
   final case class WorkerTaskFetch(workerId: String, replyTo: ActorRef[WorkerTaskFetched]) extends Command
 

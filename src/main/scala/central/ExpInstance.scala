@@ -2,6 +2,9 @@ package central
 
 import java.util.UUID.randomUUID
 
+import monocle.macros.Lenses
+
+@Lenses
 case class ExpInstance(expId: String,
                        blueprint: ExpBlueprint,
                        taskGraphs: Map[String, TaskGraph],

@@ -10,6 +10,11 @@ import central.WorkerManager.WorkerTaskDispatched
 import spray.json.JsValue
 import akka.util.Timeout
 
+import monocle.macros.Lenses
+import monocle.function.Index._
+import monocle.Traversal
+import cats.implicits._
+
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
@@ -20,12 +25,13 @@ object ExpManager {
 
   sealed trait Command
 
-
   final case class ExpCreate(request: CreateExpRequest, replyTo: ActorRef[Either[String, ExpCreated]]) extends Command
 
   final case class ExpCreated(expId: String)
 
   final case class TaskDispatchedWrapper(resp: WorkerTaskDispatched) extends Command
+
+  final case class WorkerReportResult(resultInfo: ResultInfo) extends Command
 
   sealed trait Event
 
@@ -33,9 +39,12 @@ object ExpManager {
 
   final case class UpdateExpTaskInstances(resp: WorkerTaskDispatched) extends Event with JacksonEvt
 
+  final case class UpdateResultInfo(resultInfo: ResultInfo) extends Event with JacksonEvt
+
+  @Lenses
   final case class State(expInstances: Map[String, ExpInstance])
 
-  val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("expManagerKey")
+  val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("exp-manager")
 
   def apply(workerManager: ActorRef[WorkerManager.Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
     context.system.receptionist ! Receptionist.Register(ExpManagerKey, context.self)
@@ -52,22 +61,41 @@ object ExpManager {
               implicit val timeout: Timeout =
                 Timeout.create(context.system.settings.config.getDuration("coordml-central.routes.ask-timeout"))
               Effect.persist(AddExpInstance(expInst)).thenRun { _ =>
-                replyTo ! Right { ExpCreated { expInst.expId } }
+                replyTo ! Right {
+                  ExpCreated {
+                    expInst.expId
+                  }
+                }
                 context.ask(workerManager, ref => WorkerManager.WorkerTaskDispatch(expInst, ref)) {
                   case Success(value) => TaskDispatchedWrapper(value)
                   case Failure(_) => TaskDispatchedWrapper(WorkerTaskDispatched(expInst.expId, Map.empty))
                 }
               }
           }
-        case TaskDispatchedWrapper(resp) => Effect.persist(UpdateExpTaskInstances(resp))
+        case TaskDispatchedWrapper(resp) => Effect.persist {
+          UpdateExpTaskInstances(resp)
+        }
+        case WorkerReportResult(resultInfo) => Effect.persist {
+          UpdateResultInfo(resultInfo)
+        }
       },
       eventHandler = (state, evt) => evt match {
         case AddExpInstance(expInstance) => State(state.expInstances.updated(expInstance.expId, expInstance))
-        case UpdateExpTaskInstances(resp) => State(state.expInstances.updatedWith(resp.expId) { m =>
-          m.map { exp =>
-            ExpInstance(exp.expId, exp.blueprint, exp.taskGraphs, resp.tasks)
-          }
-        })
+        case UpdateExpTaskInstances(resp) =>
+          val f =
+            State.expInstances ^|-? index(resp.expId) ^|-> ExpInstance.workerSchedule set resp.schedule
+          f(state)
+        case UpdateResultInfo(resultInfo) =>
+          val f =
+            State.expInstances ^|-? index(resultInfo.expId) ^|->
+              ExpInstance.taskGraphs ^|-? index(resultInfo.graphId) ^|->
+              TaskGraph.nodes ^|->>
+              Traversal.fromTraverse[List, TaskInstance] modify { task =>
+              if (task.taskId == resultInfo.taskId) {
+                TaskInstance.status.set(TaskStatusDone(resultInfo.results))(task)
+              } else task
+            }
+          f(state)
       }
     )
   }

@@ -2,6 +2,9 @@ package central
 
 import java.util.UUID
 
+import monocle.macros.Lenses
+
+@Lenses
 case class TaskGraph(graphId: String, nodes: List[TaskInstance], dependencies: List[(String, String)])
 
 object TaskGraph {

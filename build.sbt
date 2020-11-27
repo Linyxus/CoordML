@@ -16,9 +16,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
+  "com.github.julien-truffaut" %% "monocle-core"  % "2.0.3",
+  "com.github.julien-truffaut" %% "monocle-macro" % "2.0.3",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
 
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
 )
+
+scalacOptions in Global += "-Ymacro-annotations"
