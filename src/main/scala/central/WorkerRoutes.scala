@@ -37,6 +37,11 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
   def getStatus: Future[WorkerManager.StatusResponse] =
     workerManager ? WorkerManager.GetStatus
 
+  def workerReportResult(workerId: String, resultInfo: ResultInfo): Future[()] =
+    workerManager.ask {
+      WorkerManager.WorkerReportResult(workerId, resultInfo, _)
+    }
+
   def workerRoutes: Route =
     pathPrefix("api") {
       pathPrefix("workers") {
@@ -57,15 +62,15 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
           },
           pathPrefix("reportGpu") {
             post {
-            entity(as[WorkerInfo]) { info =>
-              onSuccess(workerReportGpu(info.workerId, info.gpuStatus)) {
-                complete(info)
+              entity(as[WorkerInfo]) { info =>
+                onSuccess(workerReportGpu(info.workerId, info.gpuStatus)) {
+                  complete(info)
+                }
               }
-            }
             }
           },
           pathPrefix("fetchTasks") {
-            parameters("worker_id") { workerId =>
+            parameters("workerId") { workerId =>
               onSuccess(workerTaskFetch(workerId)) { tasks =>
                 complete(tasks)
               }
@@ -73,6 +78,17 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
           },
           pathPrefix("status") {
             onSuccess(getStatus) { x => complete(x) }
+          },
+          pathPrefix("reportResult") {
+            post {
+              parameters("workerId") { workerId =>
+                entity(as[ResultInfo]) { res =>
+                  onSuccess(workerReportResult(workerId, res)) {
+                    complete(res)
+                  }
+                }
+              }
+            }
           }
         )
       }
