@@ -123,8 +123,9 @@ object WorkerManager {
       eventHandler = (state, evt) => evt match {
         case FindExpManager(actorRef) => (State.expManager set Some(actorRef)) { state }
         case AddWorker(workerId, name) =>
+          val maybeTasks = state.workers filter { case (_, i) => i.name == name } map { case (_, i) => i.pendingTasks }
           val f =
-            State.workers ^|-> at(workerId) set Some(WorkerInfo(workerId, name, Nil, Nil))
+            State.workers ^|-> at(workerId) set Some(WorkerInfo(workerId, name, Nil, maybeTasks.headOption getOrElse Nil))
           val g =
             State.workers modify { workers =>
               workers.filter { case (_, workerInfo) =>
