@@ -85,7 +85,7 @@ object JsonFormats {
 
   implicit object RunnableGraphFormat extends RootJsonFormat[RunnableGraph] {
     override def write(obj: RunnableGraph): JsValue = JsObject(
-      "graph_id" -> obj.graphId.toJson,
+      "graphId" -> obj.graphId.toJson,
       "nodes" -> obj.nodes.toJson,
       "dependencies" -> obj.dependencies.toJson
     )
