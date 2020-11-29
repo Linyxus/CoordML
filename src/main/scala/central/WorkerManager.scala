@@ -7,6 +7,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.receptionist.Receptionist
 import java.util.UUID.randomUUID
 
+import akka.persistence.typed.scaladsl.RetentionCriteria
 import monocle.macros.Lenses
 import monocle.function.At._
 import monocle.function.Index._
@@ -66,7 +67,7 @@ object WorkerManager {
   final case class FindExpManager(actorRef: ActorRef[ExpManager.Command]) extends Event with JacksonEvt
 
   @Lenses
-  final case class State(workers: Map[String, WorkerInfo], expManager: Option[ActorRef[ExpManager.Command]])
+  final case class State(workers: Map[String, WorkerInfo], expManager: Option[ActorRef[ExpManager.Command]]) extends JacksonEvt
 
   def apply(): Behavior[Command] = Behaviors.setup[Command] { context =>
     val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse)
@@ -147,6 +148,11 @@ object WorkerManager {
           f(state)
       }
     )
+      .snapshotWhen { case (_, _, _) => false }
+      .withRetention(RetentionCriteria.snapshotEvery(
+        numberOfEvents = 50,
+        keepNSnapshots = 2
+      ))
   }
 
   def assignGraphs(graphs: List[String], workers: List[String]): Map[String, String] = {

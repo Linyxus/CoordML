@@ -2,14 +2,13 @@ package central
 
 import akka.actor.typed.receptionist.ServiceKey
 import akka.actor.typed.receptionist.Receptionist
-import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
+import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import central.WorkerManager.WorkerTaskDispatched
 import spray.json.JsValue
 import akka.util.Timeout
-
 import monocle.macros.Lenses
 import monocle.function.Index._
 import monocle.Traversal
@@ -46,7 +45,7 @@ object ExpManager {
   final case class UpdateResultInfo(resultInfo: ResultInfo) extends Event with JacksonEvt
 
   @Lenses
-  final case class State(expInstances: Map[String, ExpInstance])
+  final case class State(expInstances: Map[String, ExpInstance]) extends JacksonEvt
 
   val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("exp-manager")
 
@@ -120,5 +119,10 @@ object ExpManager {
           f(state)
       }
     )
+      .snapshotWhen { case (_, _, _) => false }
+      .withRetention(RetentionCriteria.snapshotEvery(
+        numberOfEvents = 50,
+        keepNSnapshots = 2
+      ))
   }
 }
