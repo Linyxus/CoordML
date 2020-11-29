@@ -34,7 +34,11 @@ object ExpManager {
 
   final case class GetExpOverview(expId: String, replyTo: ActorRef[Option[ExpOverviewResponse]]) extends Command
 
+  final case class ListExpOverview(replyTo: ActorRef[ExpOverviewListing]) extends Command
+
   final case class ExpOverviewResponse(expId: String, title: String, envPath: String, progress: Double)
+
+  final case class ExpOverviewListing(experiments: List[ExpOverviewResponse])
 
   sealed trait Event
 
@@ -56,6 +60,25 @@ object ExpManager {
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
       commandHandler = (_, cmd) => cmd match {
+        case ListExpOverview(replyTo) =>
+          Effect.none.thenReply(replyTo) { state =>
+            ExpOverviewListing {
+              state.expInstances.map { case (_, e) =>
+                val tasks = ExpInstance.tasksOf(e)
+                ExpOverviewResponse(
+                  expId = e.expId,
+                  title = e.blueprint.title,
+                  envPath = e.blueprint.envPath,
+                  progress = tasks.count { t =>
+                    t.status match {
+                      case _: TaskStatusTodo => false
+                      case TaskStatusDone(_) => true
+                    }
+                  }.toDouble / tasks.length.toDouble
+                )
+              } .toList
+            }
+          }
         case GetExpOverview(expId, replyTo) =>
           Effect.none.thenReply(replyTo) { state =>
             val f = State.expInstances ^|-? index(expId) getOption state
@@ -70,7 +93,7 @@ object ExpManager {
                     case _: TaskStatusTodo => false
                     case TaskStatusDone(_) => true
                   }
-                } .toDouble / tasks.length.toDouble
+                }.toDouble / tasks.length.toDouble
               )
             }
           }

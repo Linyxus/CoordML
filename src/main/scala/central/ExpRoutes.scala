@@ -25,6 +25,9 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
   def getExpOverview(expId: String): Future[Option[ExpOverviewResponse]] =
     expManager.ask(GetExpOverview(expId, _))
 
+  def listExpOverview: Future[ExpOverviewListing] =
+    expManager ? ListExpOverview
+
   def expRoutes: Route =
     pathPrefix("api") {
       pathPrefix("exp") {
@@ -43,6 +46,12 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
               rejectEmptyResponse {
                 onSuccess(getExpOverview(expId)) { resp => complete(resp) }
               }
+            }
+          },
+
+          pathPrefix("listOverview") {
+            onSuccess(listExpOverview) { resp =>
+              complete(resp)
             }
           }
         )

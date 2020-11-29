@@ -131,4 +131,6 @@ object JsonFormats {
   implicit val expOverviewResponseFormat: RootJsonFormat[ExpManager.ExpOverviewResponse] = jsonFormat4(ExpManager.ExpOverviewResponse)
 
   implicit val workerRegisterRequestFormat: RootJsonFormat[WorkerRegisterRequest] = jsonFormat1(WorkerRegisterRequest)
+
+  implicit val expOverviewListingFormat: RootJsonFormat[ExpManager.ExpOverviewListing] = jsonFormat1(ExpManager.ExpOverviewListing)
 }
