@@ -125,7 +125,13 @@ object WorkerManager {
         case AddWorker(workerId, name) =>
           val f =
             State.workers ^|-> at(workerId) set Some(WorkerInfo(workerId, name, Nil, Nil))
-          f(state)
+          val g =
+            State.workers modify { workers =>
+              workers.filter { case (_, workerInfo) =>
+                workerInfo.name != name
+              }
+            }
+          f(g(state))
         case UpdateWorkerGpu(workerId, gpuInfo) =>
           val f =
             State.workers ^|-? index(workerId) ^|-> WorkerInfo.gpuStatus set gpuInfo
