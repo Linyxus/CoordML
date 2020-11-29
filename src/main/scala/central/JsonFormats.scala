@@ -106,11 +106,20 @@ object JsonFormats {
   implicit object WorkerInfoFormat extends RootJsonFormat[WorkerInfo] {
     override def write(obj: WorkerInfo): JsValue = JsObject(
       "worker_id" -> obj.workerId.toJson,
+      "name" -> obj.name.toJson,
       "gpu_status" -> obj.gpuStatus.toJson,
       "pending_tasks" -> obj.pendingTasks.toJson
     )
 
-    override def read(json: JsValue): WorkerInfo = ???
+    override def read(json: JsValue): WorkerInfo = {
+      val obj = json.asJsObject
+      WorkerInfo(
+        workerId = obj.fields("worker_id").convertTo[String],
+        gpuStatus = obj.fields("gpu_status").convertTo[List[GpuInfo]],
+        name = "",
+        pendingTasks = Nil
+      )
+    }
   }
   implicit val workersListFormat: RootJsonFormat[WorkerManager.WorkersList] =
     jsonFormat1(WorkerManager.WorkersList)
@@ -120,4 +129,6 @@ object JsonFormats {
   implicit val statusResponseFormat: RootJsonFormat[WorkerManager.StatusResponse] = jsonFormat2(WorkerManager.StatusResponse)
 
   implicit val expOverviewResponseFormat: RootJsonFormat[ExpManager.ExpOverviewResponse] = jsonFormat4(ExpManager.ExpOverviewResponse)
+
+  implicit val workerRegisterRequestFormat: RootJsonFormat[WorkerRegisterRequest] = jsonFormat1(WorkerRegisterRequest)
 }

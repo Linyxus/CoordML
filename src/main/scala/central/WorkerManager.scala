@@ -11,12 +11,14 @@ import monocle.macros.Lenses
 import monocle.function.At._
 import monocle.function.Index._
 
-final case class GpuMemUsage(used: Int, capacity: Int)
+final case class GpuMemUsage(used: Double, capacity: Double)
 
 final case class GpuInfo(name: String, memUsage: GpuMemUsage, load: Double)
 
+final case class WorkerRegisterRequest(name: String)
+
 @Lenses
-final case class WorkerInfo(workerId: String, gpuStatus: List[GpuInfo], pendingTasks: List[RunnableGraph])
+final case class WorkerInfo(workerId: String, name: String, gpuStatus: List[GpuInfo], pendingTasks: List[RunnableGraph])
 
 final case class ResultInfo(expId: String, graphId: String, taskId: String, results: Map[String, Double])
 
@@ -24,7 +26,7 @@ object WorkerManager {
 
   sealed trait Command
 
-  final case class WorkerRegister(replyTo: ActorRef[WorkerRegistered]) extends Command
+  final case class WorkerRegister(request: WorkerRegisterRequest, replyTo: ActorRef[WorkerRegistered]) extends Command
 
   final case class WorkerRegistered(workerId: String)
 
@@ -53,7 +55,7 @@ object WorkerManager {
 
   sealed trait Event
 
-  final case class AddWorker(workerId: String) extends Event with JacksonEvt
+  final case class AddWorker(workerId: String, name: String) extends Event with JacksonEvt
 
   final case class UpdateWorkerGpu(workerId: String, gpuInfo: List[GpuInfo]) extends Event with JacksonEvt
 
@@ -83,9 +85,9 @@ object WorkerManager {
             Effect.persist(FindExpManager(listings.head))
           else
             Effect.none
-        case WorkerRegister(replyTo) =>
+        case WorkerRegister(req, replyTo) =>
           val workerId = randomUUID().toString
-          Effect.persist(AddWorker(workerId)).thenReply(replyTo) { _ => WorkerRegistered(workerId) }
+          Effect.persist(AddWorker(workerId, req.name)).thenReply(replyTo) { _ => WorkerRegistered(workerId) }
         case GetWorkers(replyTo) => Effect.none.thenReply(replyTo) { state => WorkersList(state.workers.values.toList) }
         case WorkerReportGpu(workerId, gpuInfo, replyTo) =>
           Effect.persist(UpdateWorkerGpu(workerId, gpuInfo))
@@ -120,9 +122,9 @@ object WorkerManager {
       },
       eventHandler = (state, evt) => evt match {
         case FindExpManager(actorRef) => (State.expManager set Some(actorRef)) { state }
-        case AddWorker(workerId) =>
+        case AddWorker(workerId, name) =>
           val f =
-            State.workers ^|-> at(workerId) set Some(WorkerInfo(workerId, Nil, Nil))
+            State.workers ^|-> at(workerId) set Some(WorkerInfo(workerId, name, Nil, Nil))
           f(state)
         case UpdateWorkerGpu(workerId, gpuInfo) =>
           val f =

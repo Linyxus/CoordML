@@ -18,8 +18,8 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
 
   private implicit val timeout: Timeout = Timeout.create(system.settings.config.getDuration("coordml-central.routes.ask-timeout"))
 
-  def workerRegister: Future[WorkerManager.WorkerRegistered] =
-    workerManager ? WorkerManager.WorkerRegister
+  def workerRegister(request: WorkerRegisterRequest): Future[WorkerManager.WorkerRegistered] =
+    workerManager.ask(WorkerManager.WorkerRegister(request, _))
 
   def getWorkers: Future[WorkerManager.WorkersList] =
     workerManager ? WorkerManager.GetWorkers
@@ -42,8 +42,12 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
       pathPrefix("workers") {
         concat(
           pathPrefix("register") {
-            onSuccess(workerRegister) { resp =>
-              complete(resp)
+            post {
+              entity(as[WorkerRegisterRequest]) { req =>
+                onSuccess(workerRegister(req)) { resp =>
+                  complete(resp)
+                }
+              }
             }
           },
           pathPrefix("list") {
@@ -52,10 +56,12 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
             }
           },
           pathPrefix("reportGpu") {
+            post {
             entity(as[WorkerInfo]) { info =>
               onSuccess(workerReportGpu(info.workerId, info.gpuStatus)) {
-                complete("okay")
+                complete(info)
               }
+            }
             }
           },
           pathPrefix("fetchTasks") {
