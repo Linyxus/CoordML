@@ -35,7 +35,7 @@ object JsonFormats {
   implicit object TaskInstanceFormat extends RootJsonFormat[TaskInstance] {
     def write(instance: TaskInstance): JsValue =
       JsObject(
-        "task_id" -> instance.taskId.toJson,
+        "taskId" -> instance.taskId.toJson,
         "args" -> instance.args.toJson,
         "meta" -> instance.meta.toJson,
         "executable" -> instance.executable.toJson,
@@ -55,16 +55,16 @@ object JsonFormats {
     override def write(obj: ExpBlueprint): JsValue = JsObject(
       "title" -> obj.title.toJson,
       "author" -> obj.author.toJson,
-      "env_path" -> obj.envPath.toJson,
-      "result_parse" -> obj.resultParser.toJson,
-      "result_view" -> obj.resultView.toJson,
+      "envPath" -> obj.envPath.toJson,
+      "resultParse" -> obj.resultParser.toJson,
+      "resultView" -> obj.resultView.toJson,
       "task" -> JsTask.toJson(obj.task)
     )
   }
 
   implicit object TaskGraphFormat extends RootJsonFormat[TaskGraph] {
     override def write(obj: TaskGraph): JsValue = JsObject(
-      "graph_id" -> obj.graphId.toJson,
+      "graphId" -> obj.graphId.toJson,
       "nodes" -> obj.nodes.toJson,
       "dependencies" -> obj.dependencies.toJson
     )
@@ -74,9 +74,9 @@ object JsonFormats {
 
   implicit object TaskRunnableFormat extends RootJsonFormat[TaskRunnable] {
     override def write(obj: TaskRunnable): JsValue = JsObject(
-      "exp_id" -> obj.expId.toJson,
-      "env_path" -> obj.envPath.toJson,
-      "result_parse" -> obj.resultParse.toJson,
+      "expId" -> obj.expId.toJson,
+      "envPath" -> obj.envPath.toJson,
+      "resultParse" -> obj.resultParse.toJson,
       "task" -> obj.taskInstance.toJson
     )
 
@@ -97,7 +97,7 @@ object JsonFormats {
     override def read(json: JsValue): ExpInstance = ???
 
     override def write(obj: ExpInstance): JsValue = JsObject(
-      "exp_id" -> obj.expId.toJson,
+      "expId" -> obj.expId.toJson,
       "blueprint" -> obj.blueprint.toJson,
       "taskGraphs" -> obj.taskGraphs.toJson
     )
@@ -105,17 +105,17 @@ object JsonFormats {
 
   implicit object WorkerInfoFormat extends RootJsonFormat[WorkerInfo] {
     override def write(obj: WorkerInfo): JsValue = JsObject(
-      "worker_id" -> obj.workerId.toJson,
+      "workerId" -> obj.workerId.toJson,
       "name" -> obj.name.toJson,
-      "gpu_status" -> obj.gpuStatus.toJson,
-      "pending_tasks" -> obj.pendingTasks.toJson
+      "gpuStatus" -> obj.gpuStatus.toJson,
+      "pendingTasks" -> obj.pendingTasks.toJson
     )
 
     override def read(json: JsValue): WorkerInfo = {
       val obj = json.asJsObject
       WorkerInfo(
-        workerId = obj.fields("worker_id").convertTo[String],
-        gpuStatus = obj.fields("gpu_status").convertTo[List[GpuInfo]],
+        workerId = obj.fields("workerId").convertTo[String],
+        gpuStatus = obj.fields("gpuStatus").convertTo[List[GpuInfo]],
         name = "",
         pendingTasks = Nil
       )
