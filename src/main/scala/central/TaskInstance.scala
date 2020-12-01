@@ -1,6 +1,7 @@
 package central
 
-import java.util.UUID
+import scala.util.Random
+import java.security.MessageDigest
 
 import monocle.macros.Lenses
 
@@ -14,7 +15,7 @@ case class TaskInstance(taskId: String,
 object TaskInstance {
   def fromJsTask(task: JsSingletonTask): TaskInstance =
     TaskInstance(
-      taskId = UUID.randomUUID().toString,
+      taskId = Random.alphanumeric.take(4).mkString ++ HexDigest("SHA-256").of(task).take(8),
       executable = task.executable,
       args = task.args,
       meta = task.meta,

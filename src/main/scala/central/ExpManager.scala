@@ -7,7 +7,7 @@ import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import central.WorkerManager.WorkerTaskDispatched
-import spray.json.{JsNumber, JsString, JsValue}
+import spray.json.JsValue
 import akka.util.Timeout
 import monocle.macros.Lenses
 import monocle.function.Index._
@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
 case class CreateExpRequest(title: String, author: String, config: JsValue, resolverPath: String,
                             envPath: String, resultParse: String, resultView: ResultView)
 
-final case class ResultTable(columns: List[String], results: List[List[Option[JsValue]]])
+final case class ResultTable(columns: List[String], results: List[List[String]])
 
 object ExpManager {
 
@@ -75,17 +75,17 @@ object ExpManager {
                   case TaskStatusDone(results) => results.keys
                 }
               }.toList.distinct
-              val rows: List[List[Option[JsValue]]] = tasks.map { t =>
+              val rows: List[List[String]] = tasks.map { t =>
                 t.status match {
                   case _: TaskStatusTodo => Nil
                   case TaskStatusDone(results) =>
-                    val meta: List[Option[JsValue]] = metaKeys.map { key => t.meta get key map { x => JsString(x) } }
-                    val res: List[Option[JsValue]] = resultKeys.map { key => results get key map { x => JsNumber(x) } }
-                    meta ++ res
+                    val meta: List[String] = metaKeys.map { key => t.meta.getOrElse(key, "---") }
+                    val res: List[String] = resultKeys.map { key => results get key map { x => "%.6f".format(x) } getOrElse "---" }
+                    t.taskId :: meta ++ res
                 }
               }.toList
               ResultTable(
-                columns = metaKeys ++ resultKeys,
+                columns = "ID" :: metaKeys ++ resultKeys,
                 results = rows
               )
             }
