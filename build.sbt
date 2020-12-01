@@ -27,3 +27,9 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions in Global += "-Ymacro-annotations"
+
+enablePlugins(JavaAppPackaging)
+
+mainClass in Compile := Some("central.CentralApp")
+
+discoveredMainClasses in Compile := Seq()
