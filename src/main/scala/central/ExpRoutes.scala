@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import akka.util.Timeout
 import central.ExpManager._
 import spray.json._
@@ -28,7 +29,7 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
   def listExpOverview: Future[ExpOverviewListing] =
     expManager ? ListExpOverview
 
-  def expRoutes: Route =
+  def expRoutes: Route = cors() {
     pathPrefix("api") {
       pathPrefix("exp") {
         concat(
@@ -57,4 +58,5 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
         )
       }
     }
+  }
 }

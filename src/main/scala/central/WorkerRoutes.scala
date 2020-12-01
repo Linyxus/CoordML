@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import akka.util.Timeout
 import spray.json._
 
@@ -42,7 +43,7 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
       WorkerManager.WorkerReportResult(workerId, resultInfo, _)
     }
 
-  def workerRoutes: Route =
+  def workerRoutes: Route = cors() {
     pathPrefix("api") {
       pathPrefix("workers") {
         concat(
@@ -93,4 +94,5 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
         )
       }
     }
+  }
 }
