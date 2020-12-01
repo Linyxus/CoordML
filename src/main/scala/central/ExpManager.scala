@@ -22,6 +22,8 @@ case class CreateExpRequest(title: String, author: String, config: JsValue, reso
 
 final case class ResultTable(columns: List[String], results: List[List[String]])
 
+final case class RenderedTask(taskId: String, executable: String, status: String, args: String, tags: String)
+
 object ExpManager {
 
   sealed trait Command
@@ -45,6 +47,10 @@ object ExpManager {
   final case class ListExpResults(expId: String, replyTo: ActorRef[Option[ResultTable]]) extends Command
 
   final case class GetExpView(expId: String, replyTo: ActorRef[Option[ResultTable]]) extends Command
+
+  final case class ListRenderedTasks(expId: String, replyTo: ActorRef[Option[RenderedTaskListing]]) extends Command
+
+  final case class RenderedTaskListing(tasks: List[RenderedTask])
 
   sealed trait Event
 
@@ -88,6 +94,22 @@ object ExpManager {
     )
   }
 
+  def renderNamedPair(pair: (String, String)): String = pair match {
+    case (l, r) => s"$l = $r"
+  }
+
+  def renderTask(taskInstance: TaskInstance): RenderedTask =
+    RenderedTask(
+      taskId = taskInstance.taskId,
+      executable = taskInstance.executable,
+      status = taskInstance.status match {
+        case _: TaskStatusTodo => "Running"
+        case TaskStatusDone(_) => "Done"
+      },
+      args = taskInstance.args.toList.map(renderNamedPair) mkString "<br/>",
+      tags = taskInstance.meta.toList.map(renderNamedPair) mkString "<br/>"
+    )
+
   val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("exp-manager")
 
   def apply(workerManager: ActorRef[WorkerManager.Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
@@ -97,6 +119,12 @@ object ExpManager {
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
       commandHandler = (_, cmd) => cmd match {
+        case ListRenderedTasks(expId, replyTo) =>
+          Effect.none.thenReply(replyTo) { state =>
+            State.expInstances ^|-? index(expId) getOption state map { exp =>
+              RenderedTaskListing { exp.taskGraphs.values.flatMap { g => g.nodes.map(renderTask) }.toList }
+            }
+          }
         case GetExpView(expId, replyTo) =>
           Effect.none.thenReply(replyTo) { state =>
             State.expInstances ^|-? index(expId) getOption state map { exp =>

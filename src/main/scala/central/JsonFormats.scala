@@ -1,5 +1,6 @@
 package central
 
+import central.ExpManager.RenderedTaskListing
 import central.Functional.SessionCreated
 import sircle_lang.Task
 import sircle_lang.Task.toJson
@@ -135,4 +136,8 @@ object JsonFormats {
   implicit val expOverviewListingFormat: RootJsonFormat[ExpManager.ExpOverviewListing] = jsonFormat1(ExpManager.ExpOverviewListing)
 
   implicit val resultTableFormat: RootJsonFormat[ResultTable] = jsonFormat2(ResultTable)
+
+  implicit val renderedTaskFormat: RootJsonFormat[RenderedTask] = jsonFormat5(RenderedTask)
+
+  implicit val renderedTaskListingFormat: RootJsonFormat[RenderedTaskListing] = jsonFormat1(RenderedTaskListing)
 }

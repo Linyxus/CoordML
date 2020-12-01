@@ -35,6 +35,9 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
   def getExpView(expId: String): Future[Option[ResultTable]] =
     expManager ? { ref => GetExpView(expId, ref) }
 
+  def listRenderedTasks(expId: String): Future[Option[RenderedTaskListing]] =
+    expManager ? { ref => ListRenderedTasks(expId, ref) }
+
   def expRoutes: Route = cors() {
     pathPrefix("api") {
       pathPrefix("exp") {
@@ -76,6 +79,16 @@ class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: A
             parameters("expId") { expId =>
               rejectEmptyResponse {
                 onSuccess(getExpView(expId)) { resp =>
+                  complete(resp)
+                }
+              }
+            }
+          },
+
+          pathPrefix("listRenderedTasks") {
+            parameters("expId") { expId =>
+              rejectEmptyResponse {
+                onSuccess(listRenderedTasks(expId)) { resp =>
                   complete(resp)
                 }
               }
