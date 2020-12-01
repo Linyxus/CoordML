@@ -44,6 +44,8 @@ object ExpManager {
 
   final case class ListExpResults(expId: String, replyTo: ActorRef[Option[ResultTable]]) extends Command
 
+  final case class GetExpView(expId: String, replyTo: ActorRef[Option[ResultTable]]) extends Command
+
   sealed trait Event
 
   final case class AddExpInstance(expInstance: ExpInstance) extends Event with JacksonEvt
@@ -55,6 +57,37 @@ object ExpManager {
   @Lenses
   final case class State(expInstances: Map[String, ExpInstance]) extends JacksonEvt
 
+  def buildRelationalTable(columnKeys: List[String], tuples: List[(Map[String, String], Map[String, Double])]): ResultTable = {
+    // get all keys in results
+    val resultKeys: List[String] = tuples.flatMap { case (_, row) => row.keys }.distinct
+    // get all meta key existence
+    val metaKeys: List[List[String]] = (tuples flatMap { case (meta, _) =>
+      Tools.gatherOption {
+        columnKeys map { key => meta.get(key) }
+      }
+    }).distinct
+    // aggregate results for each meta key
+    val results = metaKeys.map { metaKey =>
+      tuples.filter { case (meta, _) =>
+        Tools.gatherOption {
+          columnKeys map { key => meta.get(key) }
+        } contains metaKey
+      }.map { case (_, row) => row }
+    }.map { rows =>
+      resultKeys.map { key =>
+        "%.6f".format {
+          Tools.maybeAverage {
+            rows.map { res => res get key }
+          }
+        }
+      }
+    }
+    ResultTable(
+      columns = columnKeys ++ resultKeys,
+      results = metaKeys zip results map { case (l, r) => l ++ r }
+    )
+  }
+
   val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("exp-manager")
 
   def apply(workerManager: ActorRef[WorkerManager.Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
@@ -64,6 +97,22 @@ object ExpManager {
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
       commandHandler = (_, cmd) => cmd match {
+        case GetExpView(expId, replyTo) =>
+          Effect.none.thenReply(replyTo) { state =>
+            State.expInstances ^|-? index(expId) getOption state map { exp =>
+              if (exp.blueprint.resultView.rowKey.isEmpty) {
+                val tuples = exp.taskGraphs.values.flatMap { g =>
+                  g.nodes.flatMap { t =>
+                    t.status match {
+                      case _: TaskStatusTodo => None
+                      case TaskStatusDone(results) => Some(t.meta -> results)
+                    }
+                  }
+                }
+                buildRelationalTable(exp.blueprint.resultView.columnKey, tuples.toList)
+              } else ???
+            }
+          }
         case ListExpResults(expId, replyTo) =>
           Effect.none.thenReply(replyTo) { state =>
             State.expInstances ^|-? index(expId) ^|-> ExpInstance.taskGraphs getOption state map { taskGraphs =>
