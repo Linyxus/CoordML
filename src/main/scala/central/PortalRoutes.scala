@@ -7,7 +7,7 @@ object PortalRoutes {
   val portalRoutes: Route =
     pathPrefix("") {
       get {
-        getFromResourceDirectory("static")
+        getFromResourceDirectory("portal")
       }
     }
 }

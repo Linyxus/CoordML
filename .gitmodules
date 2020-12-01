@@ -1,0 +1,3 @@
+[submodule "src/main/resources/portal"]
+	path = src/main/resources/portal
+	url = git@github.com:CoordML/portal.git
