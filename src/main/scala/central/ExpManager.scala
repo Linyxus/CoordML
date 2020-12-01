@@ -7,7 +7,7 @@ import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import central.WorkerManager.WorkerTaskDispatched
-import spray.json.JsValue
+import spray.json.{JsNumber, JsString, JsValue}
 import akka.util.Timeout
 import monocle.macros.Lenses
 import monocle.function.Index._
@@ -19,6 +19,8 @@ import scala.util.{Failure, Success, Try}
 
 case class CreateExpRequest(title: String, author: String, config: JsValue, resolverPath: String,
                             envPath: String, resultParse: String, resultView: ResultView)
+
+final case class ResultTable(columns: List[String], results: List[List[Option[JsValue]]])
 
 object ExpManager {
 
@@ -40,6 +42,8 @@ object ExpManager {
 
   final case class ExpOverviewListing(experiments: List[ExpOverviewResponse])
 
+  final case class ListExpResults(expId: String, replyTo: ActorRef[Option[ResultTable]]) extends Command
+
   sealed trait Event
 
   final case class AddExpInstance(expInstance: ExpInstance) extends Event with JacksonEvt
@@ -60,6 +64,32 @@ object ExpManager {
       persistenceId = PersistenceId.ofUniqueId("exp-manager"),
       emptyState = State(Map.empty),
       commandHandler = (_, cmd) => cmd match {
+        case ListExpResults(expId, replyTo) =>
+          Effect.none.thenReply(replyTo) { state =>
+            State.expInstances ^|-? index(expId) ^|-> ExpInstance.taskGraphs getOption state map { taskGraphs =>
+              val tasks = taskGraphs.values flatMap { g => g.nodes }
+              val metaKeys: List[String] = tasks.flatMap { t => t.meta.keys }.toList.distinct
+              val resultKeys: List[String] = tasks.flatMap { t =>
+                t.status match {
+                  case _: TaskStatusTodo => Nil
+                  case TaskStatusDone(results) => results.keys
+                }
+              }.toList.distinct
+              val rows: List[List[Option[JsValue]]] = tasks.map { t =>
+                t.status match {
+                  case _: TaskStatusTodo => Nil
+                  case TaskStatusDone(results) =>
+                    val meta: List[Option[JsValue]] = metaKeys.map { key => t.meta get key map { x => JsString(x) } }
+                    val res: List[Option[JsValue]] = resultKeys.map { key => results get key map { x => JsNumber(x) } }
+                    meta ++ res
+                }
+              }.toList
+              ResultTable(
+                columns = metaKeys ++ resultKeys,
+                results = rows
+              )
+            }
+          }
         case ListExpOverview(replyTo) =>
           Effect.none.thenReply(replyTo) { state =>
             ExpOverviewListing {
@@ -76,7 +106,7 @@ object ExpManager {
                     }
                   }.toDouble / tasks.length.toDouble
                 )
-              } .toList
+              }.toList
             }
           }
         case GetExpOverview(expId, replyTo) =>
