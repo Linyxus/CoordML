@@ -3,6 +3,7 @@ import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 import akka.persistence.typed.PersistenceId
 import akka.actor.typed.{ActorRef, Behavior}
 
+// test stateful actor
 object Stateful {
   sealed trait Command
   case class Add(replyTo: ActorRef[Int]) extends Command

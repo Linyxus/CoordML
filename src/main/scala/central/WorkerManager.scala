@@ -23,6 +23,7 @@ final case class WorkerInfo(workerId: String, name: String, gpuStatus: List[GpuI
 
 final case class ResultInfo(expId: String, graphId: String, taskId: String, results: Map[String, Double])
 
+// worker management actor
 object WorkerManager {
 
   sealed trait Command

@@ -11,6 +11,7 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
 import central.SystemInfo._
 
+// get system info actor
 class SysInfoRoutes(sysInfo: ActorRef[SystemInfo.Command])(implicit val system: ActorSystem[_]) {
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._

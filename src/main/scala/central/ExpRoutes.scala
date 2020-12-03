@@ -13,6 +13,7 @@ import akka.util.Timeout
 import central.ExpManager._
 import spray.json._
 
+// Experiment API routes
 class ExpRoutes(expManager: ActorRef[ExpManager.Command])(implicit val system: ActorSystem[_]) {
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._

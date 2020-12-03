@@ -6,6 +6,7 @@ import sircle_lang.Task
 import sircle_lang.Task.toJson
 import spray.json._
 
+// Json formats for spray json
 object JsonFormats {
 
   import DefaultJsonProtocol._

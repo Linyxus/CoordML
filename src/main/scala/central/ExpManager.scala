@@ -24,6 +24,9 @@ final case class ResultTable(columns: List[String], results: List[List[String]])
 
 final case class RenderedTask(taskId: String, executable: String, status: String, args: String, tags: String)
 
+/**
+ * Experiment Management Actor
+ */
 object ExpManager {
 
   sealed trait Command
@@ -94,10 +97,12 @@ object ExpManager {
     )
   }
 
+  // convert named pairs to string
   def renderNamedPair(pair: (String, String)): String = pair match {
     case (l, r) => s"$l = $r"
   }
 
+  // render task to displayable html
   def renderTask(taskInstance: TaskInstance): RenderedTask =
     RenderedTask(
       taskId = taskInstance.taskId,
@@ -110,6 +115,7 @@ object ExpManager {
       tags = taskInstance.meta.toList.map(renderNamedPair) mkString "<br/>"
     )
 
+  // service key used to lookup experiment manager actor
   val ExpManagerKey: ServiceKey[Command] = ServiceKey[ExpManager.Command]("exp-manager")
 
   def apply(workerManager: ActorRef[WorkerManager.Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
@@ -237,6 +243,7 @@ object ExpManager {
             State.expInstances ^|-? index(resp.expId) ^|-> ExpInstance.workerSchedule set resp.schedule
           f(state)
         case UpdateResultInfo(resultInfo) =>
+          // the lens to modify result info
           val f =
             State.expInstances ^|-? index(resultInfo.expId) ^|->
               ExpInstance.taskGraphs ^|-? index(resultInfo.graphId) ^|->

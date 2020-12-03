@@ -1,10 +1,12 @@
 package central
 
 object Tools {
+  // duplicate x for n times
   def duplicate[A](x: List[A], n: Int): List[A] =
     if (n <= 0) Nil
     else x ++ duplicate(x, n - 1)
 
+  // average maybe list
   def maybeAverage(x: List[Option[Double]]): Double =
     (x map { m => m getOrElse 0.0 }).sum / x.count(p => p.isDefined).toDouble
 

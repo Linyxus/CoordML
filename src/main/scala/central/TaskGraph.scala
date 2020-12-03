@@ -7,7 +7,9 @@ import monocle.macros.Lenses
 @Lenses
 case class TaskGraph(graphId: String, nodes: List[TaskInstance], dependencies: List[(String, String)])
 
+// task graph
 object TaskGraph {
+  // build task graph from Json task
   def fromJsTask(task: JsTask): TaskGraph = {
     def go(task: JsTask): (List[String], List[String], List[TaskInstance], List[(String, String)]) = task match {
       case t @ JsSingletonTask(_, _, _) =>
