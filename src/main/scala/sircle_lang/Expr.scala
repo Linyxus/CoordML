@@ -1,5 +1,6 @@
 package sircle_lang
 
+// expression type
 sealed trait Expr
 
 case class ExprBinary(left: Expr, op: OpType.OpType, right: Expr) extends Expr

@@ -1,5 +1,6 @@
 package sircle_lang
 
+// list desugar for converting list expression to cons function application
 object ListDesugar extends TreeWalkDesugar {
   override def desugar(expr: Expr): Expr = expr match {
     case ExprList(items) => transformList(items)

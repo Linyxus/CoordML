@@ -12,11 +12,14 @@ sealed trait ValueType {
   //    }
   //  }
   //
+
+  // check whether that is a subtype of this
   def <==(that: ValueType): Boolean = {
     this == that
   }
 }
 
+// any type is a subtype of AnyType
 case object AnyType extends ValueType {
   override def <==(that: ValueType): Boolean = true
 }

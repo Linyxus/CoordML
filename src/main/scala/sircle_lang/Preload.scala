@@ -1,5 +1,6 @@
 package sircle_lang
 
+// preloaded source
 object Preload {
   val preloadSource: String =
     """

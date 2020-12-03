@@ -3,6 +3,7 @@ package sircle_lang
 import scala.io.StdIn.readLine
 import scala.io.Source
 
+// repl app entry
 object Repl extends App {
   val evaluator = new Evaluator
 

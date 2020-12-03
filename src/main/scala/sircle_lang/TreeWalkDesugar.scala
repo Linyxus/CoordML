@@ -1,5 +1,8 @@
 package sircle_lang
 
+/**
+ * Base class for tree-walk desugar
+ */
 trait TreeWalkDesugar {
   def desugar(expr: Expr): Expr
   def transform(expr: Expr): Expr = expr match {

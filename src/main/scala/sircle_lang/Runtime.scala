@@ -1,5 +1,6 @@
 package sircle_lang
 
+// Sircle language runtime
 class Runtime {
   val evaluator = new Evaluator
 

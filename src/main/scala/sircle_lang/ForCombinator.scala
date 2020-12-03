@@ -1,5 +1,6 @@
 package sircle_lang
 
+// for combinator in for expression
 sealed trait ForCombinator
 
 case class ForBind(name: String, expr: Expr) extends ForCombinator

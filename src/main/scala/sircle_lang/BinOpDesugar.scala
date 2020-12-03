@@ -2,6 +2,7 @@ package sircle_lang
 
 import OpType._
 
+// desugar for binary operator
 object BinOpDesugar extends TreeWalkDesugar {
   val opTable: Map[OpType, String] = Map(
     AND -> "__and",

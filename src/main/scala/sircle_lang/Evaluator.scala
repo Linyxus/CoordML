@@ -2,7 +2,9 @@ package sircle_lang
 
 import scala.collection.immutable.List
 
+// expression evaluator
 class Evaluator {
+  // built-in functions
   val valuePrelude: List[(String, Value)] = List(
     "__add" -> ValBuiltin(
       List(IntType, IntType),
@@ -396,6 +398,7 @@ class Evaluator {
 
   type BindingEnv[A] = List[(String, A)]
 
+  // predefined type names
   val typePrelude: Map[String, ValueType] = Map(
     "Any" -> AnyType,
     "Int" -> IntType,
@@ -407,6 +410,7 @@ class Evaluator {
     "Task" -> TaskType,
   )
 
+  // predefined values
   var valueBindings: BindingEnv[Value] = List(
     "sysInfo" -> ValMapping(Map(
       "os" -> ValString(List("os.name", "os.version", "os.arch").map(x => System.getProperty(x)).mkString(",")),

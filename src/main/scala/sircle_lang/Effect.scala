@@ -1,11 +1,15 @@
 package sircle_lang
 
+// block expression effects
 sealed trait Effect
 
+// effect for binding a value to name
 case class ValueBindEffect(name: String, valType: TypeExpr, expr: Expr) extends Effect
 
+// effect for assigning a new value to name
 case class AssignEffect(name: String, expr: Expr) extends Effect
 
+// effect for simply evaluating a expression
 case class ExprEffect(expr: Expr) extends Effect
 
 object Effect {

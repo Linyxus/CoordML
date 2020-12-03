@@ -2,6 +2,7 @@ package sircle_lang
 
 import TokenType._
 
+// the token scanner
 class Scanner(val source: String) {
   var start: Int = 0
   var current: Int = 0
@@ -24,6 +25,7 @@ class Scanner(val source: String) {
 
   def eof: Boolean = current >= source.length
 
+  // advance the pointer when the token matches the specified character
   def matchAhead(ch: Char): Boolean =
     if (peek == ch) {
       advance

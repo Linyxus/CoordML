@@ -2,6 +2,7 @@ package sircle_lang
 
 import spray.json._
 
+// Sircle value base class
 sealed trait Value {
   val valueType: ValueType
 }

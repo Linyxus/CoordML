@@ -4,7 +4,9 @@ import OpType.{Associativity, LeftAssoc, OpType, RightAssoc}
 import PrefixType.PrefixType
 import TokenType.{IDENTIFIER, KW_DEF, TokenType}
 
+// grammar parsers
 class Parser(val tokens: List[Token]) {
+  // binary operator parsing rules
   val opRules: Array[(Associativity, Map[TokenType, OpType])] = Array(
     (RightAssoc, Map(
       TokenType.DOLLAR -> OpType.DOLLAR

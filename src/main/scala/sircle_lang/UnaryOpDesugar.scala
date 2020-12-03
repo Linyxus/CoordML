@@ -2,6 +2,7 @@ package sircle_lang
 
 import PrefixType._
 
+// unary op desugar that converts unary expression to function application
 object UnaryOpDesugar extends TreeWalkDesugar {
   val opTable: Map[PrefixType, String] = Map(
     NOT -> "__not",
