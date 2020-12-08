@@ -9,7 +9,7 @@ CoordML is currently working in progress. It consists of the following major com
 - *Sircle DSL*, a functional and interpreted language, used to define computational tasks in a expressive and flexible way. **(Finished)**
 - *CoordML Central*, the central server to create experiments and distribute tasks. **(Finished)**
 - *Runner*, to run tasks and extract results. **(Finished)**
-- *Web Portal*, to display runner status and experiment results and aggregate experiment results in a flexible and clear way. **(Working in progress)**
+- *Web Portal*, to display runner status and experiment results and aggregate experiment results in a flexible and clear way. **(Finish)**
 
 ## Sircle DSL
 
