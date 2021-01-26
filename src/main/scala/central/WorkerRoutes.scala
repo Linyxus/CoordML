@@ -25,7 +25,7 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
   def getWorkers: Future[WorkerManager.WorkersList] =
     workerManager ? WorkerManager.GetWorkers
 
-  def workerReportGpu(workerId: String, gpuInfo: List[GpuInfo]): Future[()] =
+  def workerReportGpu(workerId: String, gpuInfo: List[GpuInfo]): Future[Unit] =
     workerManager.ask {
       WorkerManager.WorkerReportGpu(workerId, gpuInfo, _)
     }
@@ -38,7 +38,7 @@ class WorkerRoutes(workerManager: ActorRef[WorkerManager.Command])(implicit val 
   def getStatus: Future[WorkerManager.StatusResponse] =
     workerManager ? WorkerManager.GetStatus
 
-  def workerReportResult(workerId: String, resultInfo: ResultInfo): Future[()] =
+  def workerReportResult(workerId: String, resultInfo: ResultInfo): Future[Unit] =
     workerManager.ask {
       WorkerManager.WorkerReportResult(workerId, resultInfo, _)
     }
