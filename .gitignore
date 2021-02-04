@@ -8,3 +8,10 @@ project/target
 .bsp/
 
 store/
+
+.bloop/
+project/project/
+project/.metals
+project/metals.sbt
+
+.metals/
